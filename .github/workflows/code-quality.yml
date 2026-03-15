@@ -1,0 +1,36 @@
+name: Code Quality Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+    
+    - name: Run flake8
+      run: flake8 . --max-line-length=100
+    
+    - name: Run black
+      run: black . --check
+    
+    - name: Run isort
+      run: isort . --check-only
+    
+    - name: Run pylint
+      run: pylint */models.py */views.py */serializers.py

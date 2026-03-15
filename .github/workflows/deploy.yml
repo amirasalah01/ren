@@ -1,0 +1,16 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to AWS
+      run: echo "Deployment configured - add AWS credentials when ready"
