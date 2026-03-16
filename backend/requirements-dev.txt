@@ -26,4 +26,3 @@ pylint==3.0.3
 # Development
 django-extensions==3.2.3
 ipython==8.18.1
- | Set-Content -Path "requirements-dev.txt"
