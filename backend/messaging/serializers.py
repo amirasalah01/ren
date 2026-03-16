@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from .models import Message
+
 from users.serializers import UserSerializer
+
+from .models import Message
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -11,10 +13,17 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = [
-            'id', 'sender', 'receiver', 'subject', 'body',
-            'property', 'is_read', 'created_at', 'updated_at'
+            "id",
+            "sender",
+            "receiver",
+            "subject",
+            "body",
+            "property",
+            "is_read",
+            "created_at",
+            "updated_at",
         ]
-        read_only_fields = ['id', 'sender', 'created_at', 'updated_at']
+        read_only_fields = ["id", "sender", "created_at", "updated_at"]
 
 
 class MessageCreateSerializer(serializers.ModelSerializer):
@@ -22,8 +31,8 @@ class MessageCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ['receiver', 'subject', 'body', 'property']
+        fields = ["receiver", "subject", "body", "property"]
 
     def create(self, validated_data):
-        validated_data['sender'] = self.context['request'].user
+        validated_data["sender"] = self.context["request"].user
         return super().create(validated_data)

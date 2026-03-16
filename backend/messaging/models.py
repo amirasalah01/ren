@@ -1,18 +1,15 @@
 from django.db import models
+
 from users.models import User
 
 
 class Message(models.Model):
     # Sender & Receiver
     sender = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='sent_messages'
+        User, on_delete=models.CASCADE, related_name="sent_messages"
     )
     receiver = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='received_messages'
+        User, on_delete=models.CASCADE, related_name="received_messages"
     )
 
     # Message Content
@@ -21,11 +18,11 @@ class Message(models.Model):
 
     # Related Property (Optional)
     property = models.ForeignKey(
-        'properties.Property',
+        "properties.Property",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='messages'
+        related_name="messages",
     )
 
     # Message Status
@@ -36,10 +33,10 @@ class Message(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'messages'
-        verbose_name = 'Message'
-        verbose_name_plural = 'Messages'
-        ordering = ['-created_at']
+        db_table = "messages"
+        verbose_name = "Message"
+        verbose_name_plural = "Messages"
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"Message from {self.sender} to {self.receiver}"
