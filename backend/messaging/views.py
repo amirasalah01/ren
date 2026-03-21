@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.core.mail import send_mail
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, permissions
 from rest_framework.response import Response
@@ -5,6 +7,8 @@ from rest_framework.response import Response
 from .filters import MessageFilter
 from .models import Message
 from .serializers import MessageCreateSerializer, MessageSerializer
+
+_NO_SUBJECT = "(no subject)"
 
 
 class SendMessageView(generics.CreateAPIView):
@@ -16,7 +20,16 @@ class SendMessageView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
+        message = serializer.save(sender=self.request.user)
+        # Notify the receiver by email
+        subject_line = message.subject or _NO_SUBJECT
+        send_mail(
+            subject=f"New message from {message.sender.username}: {subject_line}",
+            message=message.body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[message.receiver.email],
+            fail_silently=True,
+        )
 
 
 class InboxView(generics.ListAPIView):

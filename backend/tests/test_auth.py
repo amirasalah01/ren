@@ -179,3 +179,43 @@ class TestUserProfile:
         # Verify data was updated
         assert response.data["first_name"] == "Ahmed"
         assert response.data["last_name"] == "Updated"
+
+
+@pytest.mark.django_db
+class TestUserDashboard:
+    """Test user dashboard endpoint"""
+
+    def test_authenticated_user_can_get_dashboard(self, authenticated_client):
+        """Authenticated user receives a dashboard summary"""
+        response = authenticated_client.get("/api/auth/dashboard/")
+
+        assert response.status_code == status.HTTP_200_OK
+        # All four top-level sections must be present
+        assert "properties" in response.data
+        assert "reviews" in response.data
+        assert "messages" in response.data
+        assert "favorites" in response.data
+
+    def test_dashboard_properties_section(self, authenticated_client):
+        """Dashboard properties section contains count and total_views"""
+        response = authenticated_client.get("/api/auth/dashboard/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "count" in response.data["properties"]
+        assert "total_views" in response.data["properties"]
+        assert response.data["properties"]["count"] == 0
+        assert response.data["properties"]["total_views"] == 0
+
+    def test_dashboard_messages_section(self, authenticated_client):
+        """Dashboard messages section contains unread_count and total_received"""
+        response = authenticated_client.get("/api/auth/dashboard/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "unread_count" in response.data["messages"]
+        assert "total_received" in response.data["messages"]
+
+    def test_unauthenticated_user_cannot_get_dashboard(self, api_client):
+        """Unauthenticated request must be rejected with 401"""
+        response = api_client.get("/api/auth/dashboard/")
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
