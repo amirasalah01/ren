@@ -1,6 +1,7 @@
 """
 Tests for messaging endpoints
 """
+
 import pytest
 from rest_framework import status
 

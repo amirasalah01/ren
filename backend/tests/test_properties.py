@@ -1,6 +1,7 @@
 """
 Tests for property endpoints
 """
+
 from datetime import datetime, timedelta
 
 import pytest

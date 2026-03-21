@@ -1,6 +1,7 @@
 """
 Pytest configuration and fixtures for all tests
 """
+
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
