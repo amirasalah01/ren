@@ -9,9 +9,7 @@ from rest_framework import status
 class TestMessaging:
     """Test messaging functionality"""
 
-    def test_authenticated_user_can_send_message(
-        self, authenticated_client, test_user2
-    ):
+    def test_authenticated_user_can_send_message(self, authenticated_client, test_user2):
         """Test that authenticated user can send a message"""
         url = "/api/messages/send/"
         data = {
@@ -24,9 +22,7 @@ class TestMessaging:
         # Should succeed
         assert response.status_code == status.HTTP_201_CREATED
 
-    def test_unauthenticated_user_cannot_send_message(
-        self, api_client, test_user, test_user2
-    ):
+    def test_unauthenticated_user_cannot_send_message(self, api_client, test_user, test_user2):
         """Test that unauthenticated user cannot send message"""
         url = "/api/messages/send/"
         data = {

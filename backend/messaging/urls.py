@@ -21,7 +21,5 @@ urlpatterns = [
     # Mark as read
     path("<int:pk>/read/", MarkAsReadView.as_view(), name="mark-as-read"),
     # Conversation with specific user
-    path(
-        "conversation/<int:user_id>/", ConversationView.as_view(), name="conversation"
-    ),
+    path("conversation/<int:user_id>/", ConversationView.as_view(), name="conversation"),
 ]

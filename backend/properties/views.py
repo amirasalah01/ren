@@ -55,16 +55,12 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
         # Check ownership for edit/delete
         if self.request.method in ["PUT", "PATCH", "DELETE"]:
             if obj.owner != self.request.user:
-                raise permissions.PermissionDenied(
-                    "You can only edit your own properties"
-                )
+                raise permissions.PermissionDenied("You can only edit your own properties")
         return obj
 
     def perform_destroy(self, instance):
         if instance.owner != self.request.user:
-            raise permissions.PermissionDenied(
-                "You can only delete your own properties"
-            )
+            raise permissions.PermissionDenied("You can only delete your own properties")
         instance.delete()
 
 

@@ -59,12 +59,8 @@ class Review(models.Model):
     """Review and Rating for properties"""
 
     # Foreign Keys
-    property = models.ForeignKey(
-        Property, on_delete=models.CASCADE, related_name="reviews"
-    )
-    reviewer = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="reviews_given"
-    )
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="reviews")
+    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reviews_given")
 
     # Rating (1-5 stars)
     rating = models.IntegerField(
@@ -98,9 +94,7 @@ class Favorite(models.Model):
     """User's favorite properties"""
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorites")
-    property = models.ForeignKey(
-        Property, on_delete=models.CASCADE, related_name="favorited_by"
-    )
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="favorited_by")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

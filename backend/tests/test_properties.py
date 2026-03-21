@@ -19,9 +19,7 @@ class TestPropertyList:
         # Should succeed
         assert response.status_code == status.HTTP_200_OK
 
-    def test_authenticated_user_can_create_property(
-        self, authenticated_client, test_user
-    ):
+    def test_authenticated_user_can_create_property(self, authenticated_client, test_user):
         """Test that authenticated user can create property"""
         url = "/api/properties/list/"
         # Add available_from field (required)
@@ -95,9 +93,7 @@ class TestPropertyDetail:
             "price_per_month": 1000,
             "available_from": available_from,  # ← ADD THIS
         }
-        create_response = authenticated_client.post(
-            create_url, create_data, format="json"
-        )
+        create_response = authenticated_client.post(create_url, create_data, format="json")
 
         # Only proceed if property creation succeeded
         if create_response.status_code != status.HTTP_201_CREATED:
@@ -132,9 +128,7 @@ class TestPropertyDetail:
             "price_per_month": 1000,
             "available_from": available_from,
         }
-        create_response = authenticated_client.post(
-            create_url, create_data, format="json"
-        )
+        create_response = authenticated_client.post(create_url, create_data, format="json")
 
         if create_response.status_code != status.HTTP_201_CREATED:
             pytest.skip(f"Property creation failed: {create_response.data}")
@@ -182,9 +176,7 @@ class TestPropertyDetail:
             "price_per_month": 1000,
             "available_from": available_from,  # ← ADD THIS
         }
-        create_response = authenticated_client.post(
-            create_url, create_data, format="json"
-        )
+        create_response = authenticated_client.post(create_url, create_data, format="json")
 
         if create_response.status_code != status.HTTP_201_CREATED:
             pytest.skip(f"Property creation failed: {create_response.data}")

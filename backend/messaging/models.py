@@ -5,12 +5,8 @@ from users.models import User
 
 class Message(models.Model):
     # Sender & Receiver
-    sender = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="sent_messages"
-    )
-    receiver = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="received_messages"
-    )
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_messages")
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_messages")
 
     # Message Content
     subject = models.CharField(max_length=255, blank=True, null=True)

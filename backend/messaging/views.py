@@ -77,10 +77,7 @@ class MessageDetailView(generics.RetrieveUpdateDestroyAPIView):
         return obj
 
     def perform_destroy(self, instance):
-        if (
-            instance.receiver != self.request.user
-            and instance.sender != self.request.user
-        ):
+        if instance.receiver != self.request.user and instance.sender != self.request.user:
             raise permissions.PermissionDenied("You can only delete your own messages")
         instance.delete()
 
