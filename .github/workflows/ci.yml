@@ -1,5 +1,6 @@
 name: CI - Django Backend Tests
 
+
 on:
   push:
     branches: [ main, develop ]
@@ -25,10 +26,13 @@ jobs:
         python-version: '3.13'
     
     - name: Install dependencies
+         
       working-directory: ./backend
       run: |
         python -m pip install --upgrade pip
+        pip install setuptools          # pkg_resources fix for Python 3.13
         pip install -r requirements-dev.txt
+        pip install --upgrade djangorestframework-simplejwt
     
     - name: Run migrations
       working-directory: ./backend
