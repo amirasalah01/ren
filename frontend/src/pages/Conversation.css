@@ -1,0 +1,174 @@
+.conversation-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.conversation-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.conversation-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.conversation-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+  flex: 1;
+}
+
+.messages-thread {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 1.5rem;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.message-bubble {
+  max-width: 70%;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.message-bubble.sent {
+  align-self: flex-end;
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.message-bubble.received {
+  align-self: flex-start;
+  background-color: var(--light-bg);
+  color: var(--text-color);
+}
+
+.message-bubble-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+.message-bubble.sent .message-bubble-header {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.message-bubble.received .message-bubble-header {
+  color: var(--text-secondary);
+}
+
+.message-time {
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.message-bubble-subject {
+  font-weight: 600;
+  font-size: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.message-bubble.received .message-bubble-subject {
+  border-bottom-color: var(--border-color);
+}
+
+.message-bubble-body {
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.message-bubble-property {
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.875rem;
+}
+
+.message-bubble.received .message-bubble-property {
+  border-top-color: var(--border-color);
+  color: var(--primary-color);
+}
+
+.reply-form-container {
+  padding: 1.5rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--light-bg);
+}
+
+.reply-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.reply-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.reply-form textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.btn-send {
+  align-self: flex-end;
+  padding: 0.75rem 2rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-send:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+}
+
+.btn-send:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .conversation-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .message-bubble {
+    max-width: 85%;
+  }
+
+  .messages-thread {
+    max-height: 500px;
+  }
+}

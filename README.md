@@ -35,11 +35,8 @@ According to the [project plan](PROJECT_PLANNING.md), the project runs from **Fe
 - [x] Pagination, filtering (django-filter), search, and ordering on REST endpoints
 
 ### Still Pending (from plan)
-- [ ] Frontend application (React / Vue)
-- [ ] Property listing API views & search/filter endpoints
-- [ ] User dashboard API endpoints
+- [x] Frontend application (React + Vite)
 - [ ] Payment processing integration
-- [ ] Notification system
 - [ ] AWS deployment (EC2 / EB / ECS) — credentials & config needed
 - [ ] Full end-to-end test coverage
 
@@ -77,6 +74,7 @@ Based on the project plan, the immediate next tasks are:
 | Layer | Technology |
 |---|---|
 | Backend | Django 4.2 + Django REST Framework |
+| Frontend | React 19 + Vite |
 | Auth | Simple JWT |
 | Database | SQLite (dev/CI) / PostgreSQL (production) |
 | API Docs | drf-spectacular (OpenAPI 3) |
@@ -87,6 +85,8 @@ Based on the project plan, the immediate next tasks are:
 
 ## 🏃 Running Locally
 
+### Backend
+
 ```bash
 cd backend
 pip install -r requirements-dev.txt
@@ -94,7 +94,16 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-Run tests:
+### Frontend
+
+```bash
+cd frontend
+cp .env.example .env          # Uses http://localhost:8000 by default
+npm install
+npm run dev                   # → http://localhost:5173
+```
+
+Run backend tests:
 
 ```bash
 cd backend
