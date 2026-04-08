@@ -54,7 +54,7 @@ const Favorites = () => {
             {favorites.map((favorite) => (
               <PropertyCard
                 key={favorite.id}
-                property={favorite.property}
+                property={favorite.property_detail}
                 onFavoriteChange={fetchFavorites}
               />
             ))}

@@ -267,13 +267,16 @@ const CreateProperty = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="square_feet">Square Feet</label>
+                <label htmlFor="square_feet">
+                  Square Feet <span className="required">*</span>
+                </label>
                 <input
                   type="number"
                   id="square_feet"
                   name="square_feet"
                   value={formData.square_feet}
                   onChange={handleChange}
+                  required
                   disabled={loading}
                   min="0"
                 />
@@ -286,13 +289,16 @@ const CreateProperty = () => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="available_from">Available From</label>
+                <label htmlFor="available_from">
+                  Available From <span className="required">*</span>
+                </label>
                 <input
                   type="date"
                   id="available_from"
                   name="available_from"
                   value={formData.available_from}
                   onChange={handleChange}
+                  required
                   disabled={loading}
                 />
               </div>

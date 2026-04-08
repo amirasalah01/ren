@@ -4,8 +4,8 @@ import './SearchFilter.css';
 const SearchFilter = ({ onFilterChange, onSearch }) => {
   const [filters, setFilters] = useState({
     search: '',
-    min_price: '',
-    max_price: '',
+    price_min: '',
+    price_max: '',
     property_type: '',
     bedrooms: '',
     bathrooms: '',
@@ -27,7 +27,7 @@ const SearchFilter = ({ onFilterChange, onSearch }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     const cleanFilters = Object.fromEntries(
-      Object.entries(filters).filter(([_, value]) => value !== '' && value !== null)
+      Object.entries(filters).filter(([, value]) => value !== '' && value !== null)
     );
     if (onFilterChange) {
       onFilterChange(cleanFilters);
@@ -40,8 +40,8 @@ const SearchFilter = ({ onFilterChange, onSearch }) => {
   const handleReset = () => {
     const resetFilters = {
       search: '',
-      min_price: '',
-      max_price: '',
+      price_min: '',
+      price_max: '',
       property_type: '',
       bedrooms: '',
       bathrooms: '',
@@ -84,12 +84,12 @@ const SearchFilter = ({ onFilterChange, onSearch }) => {
         <div className={`filters-panel ${showFilters ? 'active' : ''}`}>
           <div className="filter-grid">
             <div className="filter-group">
-              <label htmlFor="min_price">Min Price</label>
+              <label htmlFor="price_min">Min Price</label>
               <input
                 type="number"
-                id="min_price"
-                name="min_price"
-                value={filters.min_price}
+                id="price_min"
+                name="price_min"
+                value={filters.price_min}
                 onChange={handleChange}
                 placeholder="Min"
                 min="0"
@@ -97,12 +97,12 @@ const SearchFilter = ({ onFilterChange, onSearch }) => {
             </div>
 
             <div className="filter-group">
-              <label htmlFor="max_price">Max Price</label>
+              <label htmlFor="price_max">Max Price</label>
               <input
                 type="number"
-                id="max_price"
-                name="max_price"
-                value={filters.max_price}
+                id="price_max"
+                name="price_max"
+                value={filters.price_max}
                 onChange={handleChange}
                 placeholder="Max"
                 min="0"
@@ -169,8 +169,8 @@ const SearchFilter = ({ onFilterChange, onSearch }) => {
               >
                 <option value="-created_at">Newest First</option>
                 <option value="created_at">Oldest First</option>
-                <option value="price">Price: Low to High</option>
-                <option value="-price">Price: High to Low</option>
+                <option value="price_per_month">Price: Low to High</option>
+                <option value="-price_per_month">Price: High to Low</option>
                 <option value="-view_count">Most Viewed</option>
               </select>
             </div>

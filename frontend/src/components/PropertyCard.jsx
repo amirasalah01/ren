@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { addFavorite, removeFavorite, getFavorites } from '../api/properties';
+import { addFavorite, removeFavorite } from '../api/properties';
 import StarRating from './StarRating';
 import './PropertyCard.css';
 
@@ -12,8 +12,8 @@ const PropertyCard = ({ property, onFavoriteChange }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated && property.is_favorited !== undefined) {
-      setIsFavorited(property.is_favorited);
+    if (isAuthenticated && property.is_favorite !== undefined) {
+      setIsFavorited(property.is_favorite);
       setFavoriteId(property.favorite_id);
     }
   }, [property, isAuthenticated]);

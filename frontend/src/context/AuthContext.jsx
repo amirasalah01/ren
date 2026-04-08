@@ -1,8 +1,9 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { login as loginAPI, getProfile } from '../api/auth';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { login as loginAPI } from '../api/auth';
 
 const AuthContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -15,11 +16,18 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const logout = useCallback(() => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    setUser(null);
+  }, []);
+
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('access_token');
       const storedUser = localStorage.getItem('user');
-      
+
       if (token && storedUser) {
         try {
           setUser(JSON.parse(storedUser));
@@ -32,7 +40,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     initAuth();
-  }, []);
+  }, [logout]);
 
   const login = async (credentials) => {
     try {
@@ -45,16 +53,9 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.detail || 'Login failed',
+        error: error.response?.data?.error || error.response?.data?.detail || 'Login failed',
       };
     }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    setUser(null);
   };
 
   const updateUser = (userData) => {

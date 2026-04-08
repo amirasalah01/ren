@@ -31,7 +31,7 @@ export const deleteMessage = async (id) => {
 };
 
 export const markAsRead = async (id) => {
-  const response = await axiosInstance.put(`/api/messages/${id}/read/`);
+  const response = await axiosInstance.patch(`/api/messages/${id}/read/`);
   return response.data;
 };
 

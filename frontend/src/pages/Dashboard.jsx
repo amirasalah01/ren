@@ -57,7 +57,7 @@ const Dashboard = () => {
             <Link to="/my-properties" className="stat-card stat-card-primary">
               <div className="stat-icon">🏠</div>
               <div className="stat-content">
-                <div className="stat-value">{stats?.my_properties_count || 0}</div>
+                <div className="stat-value">{stats?.properties?.count || 0}</div>
                 <div className="stat-label">My Properties</div>
               </div>
             </Link>
@@ -66,7 +66,7 @@ const Dashboard = () => {
           <Link to="/favorites" className="stat-card stat-card-secondary">
             <div className="stat-icon">❤️</div>
             <div className="stat-content">
-              <div className="stat-value">{stats?.favorites_count || 0}</div>
+              <div className="stat-value">{stats?.favorites?.count || 0}</div>
               <div className="stat-label">Favorites</div>
             </div>
           </Link>
@@ -74,24 +74,16 @@ const Dashboard = () => {
           <Link to="/inbox" className="stat-card stat-card-success">
             <div className="stat-icon">📨</div>
             <div className="stat-content">
-              <div className="stat-value">{stats?.received_messages_count || 0}</div>
+              <div className="stat-value">{stats?.messages?.total_received || 0}</div>
               <div className="stat-label">Received Messages</div>
             </div>
           </Link>
 
-          <Link to="/inbox?tab=sent" className="stat-card stat-card-info">
-            <div className="stat-icon">📤</div>
-            <div className="stat-content">
-              <div className="stat-value">{stats?.sent_messages_count || 0}</div>
-              <div className="stat-label">Sent Messages</div>
-            </div>
-          </Link>
-
-          {stats?.unread_messages_count > 0 && (
+          {stats?.messages?.unread_count > 0 && (
             <Link to="/inbox" className="stat-card stat-card-warning">
               <div className="stat-icon">🔔</div>
               <div className="stat-content">
-                <div className="stat-value">{stats.unread_messages_count}</div>
+                <div className="stat-value">{stats.messages.unread_count}</div>
                 <div className="stat-label">Unread Messages</div>
               </div>
             </Link>

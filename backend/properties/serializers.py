@@ -12,6 +12,7 @@ class PropertySerializer(serializers.ModelSerializer):
     average_rating = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
     is_favorite = serializers.SerializerMethodField()
+    favorite_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Property
@@ -34,6 +35,7 @@ class PropertySerializer(serializers.ModelSerializer):
             "average_rating",
             "review_count",
             "is_favorite",
+            "favorite_id",
             "created_at",
             "updated_at",
         ]
@@ -56,6 +58,13 @@ class PropertySerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.favorited_by.filter(user=request.user).exists()
         return False
+
+    def get_favorite_id(self, obj):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            favorite = obj.favorited_by.filter(user=request.user).first()
+            return favorite.id if favorite else None
+        return None
 
 
 class ReviewSerializer(serializers.ModelSerializer):

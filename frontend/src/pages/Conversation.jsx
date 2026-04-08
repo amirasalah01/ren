@@ -40,10 +40,10 @@ const Conversation = () => {
     try {
       const lastMessage = messages[0];
       await sendMessage({
-        receiver_id: parseInt(userId),
+        receiver: parseInt(userId),
         subject: lastMessage?.subject ? `Re: ${lastMessage.subject}` : 'Reply',
         body: replyText,
-        property_id: lastMessage?.property?.id,
+        property: lastMessage?.property?.id,
       });
       setReplyText('');
       await fetchConversation();

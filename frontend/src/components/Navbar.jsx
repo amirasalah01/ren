@@ -11,19 +11,21 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchUnreadCount();
-    }
+    if (!isAuthenticated) return;
+    const controller = new AbortController();
+    getDashboard()
+      .then((data) => {
+        if (!controller.signal.aborted) setUnreadCount(data.messages?.unread_count || 0);
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          console.error('Error fetching unread count:', error);
+        }
+      });
+    return () => {
+      controller.abort();
+    };
   }, [isAuthenticated]);
-
-  const fetchUnreadCount = async () => {
-    try {
-      const data = await getDashboard();
-      setUnreadCount(data.unread_messages_count || 0);
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    }
-  };
 
   const handleLogout = () => {
     logout();

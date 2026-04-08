@@ -38,7 +38,8 @@ const Register = () => {
     }
 
     try {
-      const { password2, ...registerData } = formData;
+      const registerData = { ...formData };
+      delete registerData.password2;
       await register(registerData);
       navigate('/login', { state: { message: 'Registration successful! Please login.' } });
     } catch (err) {

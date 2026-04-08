@@ -61,7 +61,7 @@ export const getFavorites = async () => {
 };
 
 export const addFavorite = async (propertyId) => {
-  const response = await axiosInstance.post('/api/properties/favorites/', { property_id: propertyId });
+  const response = await axiosInstance.post('/api/properties/favorites/', { property: propertyId });
   return response.data;
 };
 

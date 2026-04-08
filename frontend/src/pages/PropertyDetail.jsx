@@ -41,7 +41,7 @@ const PropertyDetail = () => {
     try {
       const data = await getProperty(id);
       setProperty(data);
-      setIsFavorited(data.is_favorited || false);
+      setIsFavorited(data.is_favorite || false);
       setFavoriteId(data.favorite_id);
     } catch (err) {
       console.error('Error fetching property:', err);
@@ -94,10 +94,10 @@ const PropertyDetail = () => {
     setSendingMessage(true);
     try {
       await sendMessage({
-        receiver_id: property.owner.id,
+        receiver: property.owner.id,
         subject: messageData.subject || `Inquiry about ${property.title}`,
         body: messageData.body,
-        property_id: property.id,
+        property: property.id,
       });
       alert('Message sent successfully!');
       setShowMessageForm(false);
