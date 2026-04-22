@@ -131,5 +131,5 @@ class ConversationView(generics.ListAPIView):
 
         # Get all messages between these two users
         return Message.objects.filter(
-            sender__in=[current_user, user_id], receiver__in=[current_user, user_id]
+            sender__in=[current_user.id, user_id], receiver__in=[current_user.id, user_id]
         ).order_by("created_at")

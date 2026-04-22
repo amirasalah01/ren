@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FiUpload, FiX, FiMapPin } from "react-icons/fi";
 import { createProperty } from "../api/properties";
 import { safeSrc } from "../utils/sanitize";
+import { CITIES_BY_GOUVERNEMENT, TUNISIA_BOUNDS, TUNISIA_CENTER, TUNISIA_GOUVERNEMENTS } from "../utils/tunisia";
 
 const PROPERTY_TYPES = ["apartment", "house", "condo", "villa", "studio"];
 
@@ -13,13 +14,15 @@ export default function CreateProperty() {
     title: "",
     description: "",
     address: "",
+    gouvernement: "",
     city: "",
-    country: "",
+    country: "Tunisia",
     bedrooms: "",
     bathrooms: "",
     square_feet: "",
     property_type: "apartment",
     price_per_month: "",
+    price_per_day: "",
     available_from: "",
     is_available: true,
     latitude: "",
@@ -34,13 +37,14 @@ export default function CreateProperty() {
   const leafletMapRef = useRef(null);
   const markerRef = useRef(null);
 
-  // Initialize Leaflet map for location picking
+  const availableCities = formData.gouvernement ? (CITIES_BY_GOUVERNEMENT[formData.gouvernement] || []) : [];
+
+  // Initialize Leaflet map for location picking — restricted to Tunisia
   useEffect(() => {
     if (!mapRef.current) return;
     if (leafletMapRef.current) return;
 
     import("leaflet").then((L) => {
-      // Fix default marker icons
       delete L.Icon.Default.prototype._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
@@ -48,7 +52,11 @@ export default function CreateProperty() {
         shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
       });
 
-      const map = L.map(mapRef.current).setView([20, 0], 2);
+      const map = L.map(mapRef.current, {
+        maxBounds: TUNISIA_BOUNDS,
+        maxBoundsViscosity: 1.0,
+      }).setView(TUNISIA_CENTER, 6);
+
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
       }).addTo(map);
@@ -81,10 +89,14 @@ export default function CreateProperty() {
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    if (name === "gouvernement") {
+      setFormData((prev) => ({ ...prev, gouvernement: value, city: "" }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+    }
   }
 
   function handleImageChange(e) {
@@ -175,21 +187,35 @@ export default function CreateProperty() {
             <input name="address" value={formData.address} onChange={handleChange} className={inputCls} required placeholder="Street address" />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">City *</label>
-              <input name="city" value={formData.city} onChange={handleChange} className={inputCls} required placeholder="City" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Country *</label>
-              <input name="country" value={formData.country} onChange={handleChange} className={inputCls} required placeholder="Country" />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Gouvernement *</label>
+            <select name="gouvernement" value={formData.gouvernement} onChange={handleChange} className={inputCls} required>
+              <option value="">Select gouvernement...</option>
+              {TUNISIA_GOUVERNEMENTS.map((g) => (
+                <option key={g.name} value={g.name}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">City *</label>
+            <select name="city" value={formData.city} onChange={handleChange} className={inputCls} required disabled={!formData.gouvernement}>
+              <option value="">{formData.gouvernement ? "Select city..." : "Select gouvernement first"}</option>
+              {availableCities.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Country</label>
+            <input name="country" value={formData.country} readOnly className={`${inputCls} bg-slate-50 text-slate-500`} />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               <FiMapPin className="inline mr-1" />
-              Pin on Map (click to set location)
+              Pin on Map — Tunisia (click to set location)
             </label>
             <div ref={mapRef} className="w-full h-64 rounded-2xl overflow-hidden border border-slate-200" />
             {formData.latitude && formData.longitude && (
@@ -221,9 +247,17 @@ export default function CreateProperty() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Price / month (DZD) *</label>
-              <input type="number" min="0" name="price_per_month" value={formData.price_per_month} onChange={handleChange} className={inputCls} required placeholder="0" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Price / month (TND)</label>
+              <input type="number" min="0" name="price_per_month" value={formData.price_per_month} onChange={handleChange} className={inputCls} placeholder="0" />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Price / day (TND)</label>
+              <input type="number" min="0" name="price_per_day" value={formData.price_per_day} onChange={handleChange} className={inputCls} placeholder="0" />
+            </div>
+          </div>
+          <p className="text-xs text-slate-400">Enter at least one price (per month or per day).</p>
+
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Available from</label>
               <input type="date" name="available_from" value={formData.available_from} onChange={handleChange} className={inputCls} />

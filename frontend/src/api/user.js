@@ -16,3 +16,8 @@ export async function getDashboard() {
   const response = await api.get("/auth/dashboard/");
   return response.data;
 }
+
+export async function searchUsers(query) {
+  const response = await api.get("/auth/users/search/", { params: { q: query } });
+  return response.data;
+}

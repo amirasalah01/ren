@@ -38,8 +38,10 @@ export default function PropertyCard({ property }) {
   }
 
   const imgUrl = getImageUrl(property.main_image);
-  const location = [property.city, property.country].filter(Boolean).join(", ") || "Unknown location";
-  const price = Number(property.price_per_month).toLocaleString();
+  const location = [property.city, property.gouvernement].filter(Boolean).join(", ") || [property.city, property.country].filter(Boolean).join(", ") || "Tunisia";
+  const priceMonthly = property.price_per_month ? `${Number(property.price_per_month).toLocaleString()} TND / mo` : null;
+  const priceDaily = property.price_per_day ? `${Number(property.price_per_day).toLocaleString()} TND / day` : null;
+  const price = priceMonthly || priceDaily || "—";
   const rating = property.average_rating || null;
 
   return (
@@ -90,8 +92,10 @@ export default function PropertyCard({ property }) {
 
         <div className="flex items-center justify-between">
           <p className="text-slate-900 font-semibold text-sm">
-            {price} DZD
-            <span className="text-slate-500 font-normal"> / mo</span>
+            {price}
+            {priceMonthly && priceDaily && (
+              <span className="block text-slate-400 font-normal text-xs">{priceDaily}</span>
+            )}
           </p>
           {property.bedrooms !== undefined && (
             <span className="text-slate-500 text-xs flex items-center gap-1">

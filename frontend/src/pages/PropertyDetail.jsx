@@ -347,8 +347,18 @@ export default function PropertyDetail() {
         <div className="lg:col-span-1">
           <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm sticky top-24">
             <p className="text-3xl font-bold text-slate-900 mb-1">
-              {Number(property.price_per_month).toLocaleString()} <span className="text-base text-slate-500 font-normal">DZD / month</span>
+              {property.price_per_month
+                ? <>{Number(property.price_per_month).toLocaleString()} <span className="text-base text-slate-500 font-normal">TND / month</span></>
+                : property.price_per_day
+                  ? <>{Number(property.price_per_day).toLocaleString()} <span className="text-base text-slate-500 font-normal">TND / day</span></>
+                  : "Price on request"
+              }
             </p>
+            {property.price_per_month && property.price_per_day && (
+              <p className="text-sm text-slate-500 mb-2">
+                {Number(property.price_per_day).toLocaleString()} TND / day
+              </p>
+            )}
 
             <div className="flex items-center gap-1 text-sm text-slate-500 mb-4">
               <FiStar className="text-yellow-400" />
@@ -384,7 +394,7 @@ export default function PropertyDetail() {
 
             {isAuthenticated ? (
               <button
-                onClick={() => navigate("/inbox")}
+                onClick={() => navigate(`/inbox?user_id=${property.owner?.id}&username=${property.owner?.username}`)}
                 className="w-full bg-blue-600 text-white rounded-2xl py-3 font-medium hover:bg-blue-700 transition shadow-sm"
               >
                 Contact Owner

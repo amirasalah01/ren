@@ -1,5 +1,5 @@
 from django.contrib.auth import authenticate, get_user_model
-from django.db.models import Avg, Sum
+from django.db.models import Avg, Q, Sum
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -139,3 +139,18 @@ class DashboardView(APIView):
                 },
             }
         )
+
+
+class UserSearchView(APIView):
+    """Search users by username (authenticated)"""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        q = request.query_params.get("q", "").strip()
+        if not q:
+            return Response([])
+        users = User.objects.filter(
+            Q(username__icontains=q) | Q(first_name__icontains=q) | Q(last_name__icontains=q)
+        ).exclude(id=request.user.id)[:10]
+        return Response(UserSerializer(users, many=True).data)

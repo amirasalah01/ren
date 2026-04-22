@@ -38,6 +38,8 @@ class PropertySerializer(serializers.ModelSerializer):
             "square_feet",
             "property_type",
             "price_per_month",
+            "price_per_day",
+            "gouvernement",
             "available_from",
             "is_available",
             "main_image",
