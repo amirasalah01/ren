@@ -19,7 +19,7 @@ class Property(models.Model):
     # Details
     bedrooms = models.IntegerField()
     bathrooms = models.IntegerField()
-    square_feet = models.FloatField()
+    square_feet = models.FloatField(blank=True, null=True)
 
     # Type & Price
     property_type = models.CharField(
@@ -35,8 +35,15 @@ class Property(models.Model):
     price_per_month = models.DecimalField(max_digits=10, decimal_places=2)
 
     # Availability
-    available_from = models.DateField()
+    available_from = models.DateField(blank=True, null=True)
     is_available = models.BooleanField(default=True)
+
+    # Main image
+    main_image = models.ImageField(upload_to="properties/", blank=True, null=True)
+
+    # Geo coordinates (optional, for map display)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
 
     # Tracking
     view_count = models.IntegerField(default=0)
@@ -106,3 +113,21 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.property.title}"
+
+
+class PropertyImage(models.Model):
+    """Additional images for a property"""
+
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to="properties/")
+    caption = models.CharField(max_length=255, blank=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "property_images"
+        verbose_name = "Property Image"
+        verbose_name_plural = "Property Images"
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"Image for {self.property.title}"

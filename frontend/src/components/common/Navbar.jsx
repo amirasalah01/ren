@@ -26,9 +26,14 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-3">
-          <button className="hidden md:block text-sm font-medium text-slate-700 hover:text-slate-900 transition">
-            Rent your property
-          </button>
+          {isAuthenticated && (
+            <Link
+              to="/create-property"
+              className="hidden md:block text-sm font-medium text-slate-700 hover:text-slate-900 transition border border-slate-200 rounded-full px-4 py-2 hover:bg-slate-50"
+            >
+              + List property
+            </Link>
+          )}
 
           <div className="relative">
             <button
@@ -48,12 +53,11 @@ export default function Navbar() {
                     <>
                       <Link
                         to="/login"
-                        className="block px-5 py-3 hover:bg-slate-50 text-slate-800"
+                        className="block px-5 py-3 hover:bg-slate-50 text-slate-800 font-medium"
                         onClick={closeMenu}
                       >
                         Log in
                       </Link>
-
                       <Link
                         to="/register"
                         className="block px-5 py-3 hover:bg-slate-50 text-slate-800"
@@ -74,11 +78,19 @@ export default function Navbar() {
                       </div>
 
                       <Link
+                        to="/profile"
+                        className="block px-5 py-3 hover:bg-slate-50 text-slate-800"
+                        onClick={closeMenu}
+                      >
+                        👤 Profile
+                      </Link>
+
+                      <Link
                         to="/favorites"
                         className="block px-5 py-3 hover:bg-slate-50 text-slate-800"
                         onClick={closeMenu}
                       >
-                        Favorites
+                        ❤️ Favorites
                       </Link>
 
                       <Link
@@ -86,35 +98,37 @@ export default function Navbar() {
                         className="block px-5 py-3 hover:bg-slate-50 text-slate-800"
                         onClick={closeMenu}
                       >
-                        Inbox
+                        📬 Inbox
                       </Link>
+
                       <Link
                         to="/create-property"
                         className="block px-5 py-3 hover:bg-slate-50 text-slate-800"
                         onClick={closeMenu}
                       >
-                        Add property
+                        🏠 Add property
                       </Link>
+
                       <Link
                         to="/my-properties"
                         className="block px-5 py-3 hover:bg-slate-50 text-slate-800"
                         onClick={closeMenu}
                       >
-                        My properties
+                        📋 My properties
                       </Link>
 
                       <button
                         onClick={handleLogout}
                         className="block w-full text-left px-5 py-3 hover:bg-slate-50 text-slate-800"
                       >
-                        Logout
+                        🚪 Logout
                       </button>
                     </>
                   )}
 
                   <div className="border-t my-2"></div>
 
-                  <button className="block w-full text-left px-5 py-3 hover:bg-slate-50 text-slate-800">
+                  <button className="block w-full text-left px-5 py-3 hover:bg-slate-50 text-slate-500 text-sm">
                     Help Center
                   </button>
                 </div>

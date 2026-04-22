@@ -5,6 +5,8 @@ from .views import (
     FavoriteListCreateView,
     MyPropertiesView,
     PropertyDetailView,
+    PropertyImageDeleteView,
+    PropertyImageUploadView,
     PropertyListCreateView,
     PropertyRatingView,
     PropertySearchView,
@@ -18,6 +20,9 @@ urlpatterns = [
     path("<int:pk>/", PropertyDetailView.as_view(), name="property-detail"),
     path("my/", MyPropertiesView.as_view(), name="my-properties"),
     path("search/", PropertySearchView.as_view(), name="property-search"),
+    # Property images
+    path("<int:property_id>/images/", PropertyImageUploadView.as_view(), name="property-image-upload"),
+    path("images/<int:pk>/", PropertyImageDeleteView.as_view(), name="property-image-delete"),
     # Reviews
     path(
         "<int:property_id>/reviews/",
