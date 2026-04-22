@@ -114,6 +114,10 @@ export default function CreateProperty() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!formData.price_per_month && !formData.price_per_day) {
+      setError("Please enter at least one price (per month or per day).");
+      return;
+    }
     setLoading(true);
     setError("");
 
