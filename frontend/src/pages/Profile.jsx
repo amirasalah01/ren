@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FiUser, FiEdit2, FiSave, FiX, FiHome, FiHeart, FiStar, FiMail } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { getDashboard, getProfile, updateProfile } from "../api/user";
+import { safeSrc } from "../utils/sanitize";
 
 const API_BASE = "http://127.0.0.1:8000";
 
@@ -103,7 +104,7 @@ export default function Profile() {
           <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm text-center">
             <div className="relative inline-block mb-4">
               {avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow" />
+                <img src={safeSrc(avatarUrl)} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow" />
               ) : (
                 <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center border-4 border-white shadow">
                   <FiUser className="text-blue-600 text-3xl" />

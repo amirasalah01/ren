@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiUpload, FiX, FiMapPin } from "react-icons/fi";
 import { getProperty, updateProperty } from "../api/properties";
+import { safeSrc } from "../utils/sanitize";
 
 const PROPERTY_TYPES = ["apartment", "house", "condo", "villa", "studio"];
 
@@ -263,7 +264,7 @@ export default function EditProperty() {
           <h2 className="text-lg font-semibold text-slate-800">Main Photo</h2>
           {mainImagePreview ? (
             <div className="relative">
-              <img src={mainImagePreview} alt="Preview" className="w-full h-64 object-cover rounded-2xl" />
+              <img src={safeSrc(mainImagePreview)} alt="Preview" className="w-full h-64 object-cover rounded-2xl" />
               <button type="button" onClick={removeImage} className="absolute top-3 right-3 bg-white rounded-full p-2 shadow hover:bg-red-50 transition">
                 <FiX className="text-red-500" />
               </button>
