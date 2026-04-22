@@ -1,12 +1,14 @@
 from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, permissions
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from .filters import PropertyFilter
-from .models import Favorite, Property, Review
+from .models import Favorite, Property, PropertyImage, Review
 from .serializers import (
     FavoriteSerializer,
+    PropertyImageSerializer,
     PropertySerializer,
     ReviewCreateSerializer,
     ReviewSerializer,
@@ -20,13 +22,14 @@ class PropertyListCreateView(generics.ListCreateAPIView):
 
     serializer_class = PropertySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
     filterset_class = PropertyFilter
-    search_fields = ["title", "description", "city", "country"]
+    search_fields = ["title", "description", "city", "country", "address"]
     ordering_fields = ["price_per_month", "created_at", "bedrooms"]
     ordering = ["-created_at"]
 
@@ -45,6 +48,7 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Property.objects.all()
     serializer_class = PropertySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_object(self):
         obj = super().get_object()
@@ -231,3 +235,32 @@ class FavoriteDetailView(generics.DestroyAPIView):
 
     def get_queryset(self):
         return Favorite.objects.filter(user=self.request.user)
+
+
+class PropertyImageUploadView(generics.CreateAPIView):
+    """
+    Upload additional images for a property (owner only)
+    """
+
+    serializer_class = PropertyImageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def perform_create(self, serializer):
+        property_id = self.kwargs.get("property_id")
+        property_obj = Property.objects.get(id=property_id)
+        if property_obj.owner != self.request.user:
+            raise permissions.PermissionDenied("You can only add images to your own properties")
+        serializer.save(property=property_obj)
+
+
+class PropertyImageDeleteView(generics.DestroyAPIView):
+    """
+    Delete a property image (owner only)
+    """
+
+    serializer_class = PropertyImageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return PropertyImage.objects.filter(property__owner=self.request.user)

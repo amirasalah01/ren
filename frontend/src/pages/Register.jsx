@@ -11,6 +11,7 @@ export default function Register() {
     last_name: "",
     email: "",
     password: "",
+    password2: "",
     phone: "",
   });
 
@@ -29,12 +30,26 @@ export default function Register() {
     setLoading(true);
     setError("");
 
+    if (formData.password !== formData.password2) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+
     try {
       await registerUser(formData);
       navigate("/login");
     } catch (err) {
       if (err.response?.data) {
-        setError(JSON.stringify(err.response.data));
+        const errData = err.response.data;
+        if (typeof errData === "object") {
+          const messages = Object.entries(errData)
+            .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(", ") : val}`)
+            .join(" | ");
+          setError(messages);
+        } else {
+          setError(String(errData));
+        }
       } else {
         setError("Registration failed. Please try again.");
       }
@@ -53,11 +68,14 @@ export default function Register() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input name="username" placeholder="Username" value={formData.username} onChange={handleChange} className="w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" required />
-          <input name="first_name" placeholder="First name" value={formData.first_name} onChange={handleChange} className="w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" />
-          <input name="last_name" placeholder="Last name" value={formData.last_name} onChange={handleChange} className="w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" />
+          <div className="grid grid-cols-2 gap-3">
+            <input name="first_name" placeholder="First name" value={formData.first_name} onChange={handleChange} className="w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" />
+            <input name="last_name" placeholder="Last name" value={formData.last_name} onChange={handleChange} className="w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
           <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" required />
+          <input name="phone" placeholder="Phone (optional)" value={formData.phone} onChange={handleChange} className="w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" />
           <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" required />
-          <input name="phone" placeholder="Phone" value={formData.phone} onChange={handleChange} className="w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="password" name="password2" placeholder="Confirm password" value={formData.password2} onChange={handleChange} className="w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" required />
 
           {error && (
             <div className="bg-red-50 text-red-600 border border-red-200 rounded-2xl px-4 py-3 text-sm">

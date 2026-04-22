@@ -5,17 +5,21 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
-    const email = localStorage.getItem("user_email");
+    const stored = localStorage.getItem("user_data");
 
     if (token) {
       setIsAuthenticated(true);
     }
-    if (email) {
-      setUserEmail(email);
+    if (stored) {
+      try {
+        setUser(JSON.parse(stored));
+      } catch {
+        // ignore
+      }
     }
   }, []);
 
@@ -24,10 +28,12 @@ export function AuthProvider({ children }) {
 
     localStorage.setItem("access_token", data.access || "");
     localStorage.setItem("refresh_token", data.refresh || "");
-    localStorage.setItem("user_email", formData.email);
+    if (data.user) {
+      localStorage.setItem("user_data", JSON.stringify(data.user));
+      setUser(data.user);
+    }
 
     setIsAuthenticated(true);
-    setUserEmail(formData.email);
 
     return data;
   }
@@ -35,15 +41,24 @@ export function AuthProvider({ children }) {
   function logout() {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user_email");
+    localStorage.removeItem("user_data");
 
     setIsAuthenticated(false);
-    setUserEmail("");
+    setUser(null);
   }
+
+  function updateUser(updated) {
+    setUser(updated);
+    localStorage.setItem("user_data", JSON.stringify(updated));
+  }
+
+  const userEmail = user?.email || "";
+  const username = user?.username || "";
+  const userId = user?.id || null;
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, userEmail, login, logout }}
+      value={{ isAuthenticated, user, userEmail, username, userId, login, logout, updateUser }}
     >
       {children}
     </AuthContext.Provider>

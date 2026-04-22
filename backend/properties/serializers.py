@@ -2,7 +2,15 @@ from rest_framework import serializers
 
 from users.serializers import UserSerializer
 
-from .models import Favorite, Property, Review
+from .models import Favorite, Property, PropertyImage, Review
+
+
+class PropertyImageSerializer(serializers.ModelSerializer):
+    """Serializer for property images"""
+
+    class Meta:
+        model = PropertyImage
+        fields = ["id", "image", "caption", "order"]
 
 
 class PropertySerializer(serializers.ModelSerializer):
@@ -13,6 +21,7 @@ class PropertySerializer(serializers.ModelSerializer):
     review_count = serializers.SerializerMethodField()
     is_favorite = serializers.SerializerMethodField()
     favorite_id = serializers.SerializerMethodField()
+    images = PropertyImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Property
@@ -31,6 +40,10 @@ class PropertySerializer(serializers.ModelSerializer):
             "price_per_month",
             "available_from",
             "is_available",
+            "main_image",
+            "latitude",
+            "longitude",
+            "images",
             "view_count",
             "average_rating",
             "review_count",

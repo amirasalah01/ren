@@ -9,6 +9,8 @@ import Inbox from "../pages/Inbox";
 import MyProperties from "../pages/MyProperties";
 import PropertyDetail from "../pages/PropertyDetail";
 import CreateProperty from "../pages/CreateProperty";
+import EditProperty from "../pages/EditProperty";
+import Profile from "../pages/Profile";
 
 export default function Router() {
   return (
@@ -49,6 +51,22 @@ export default function Router() {
           element={
             <ProtectedRoute>
               <CreateProperty />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edit-property/:id"
+          element={
+            <ProtectedRoute>
+              <EditProperty />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />

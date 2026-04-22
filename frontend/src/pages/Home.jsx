@@ -1,43 +1,42 @@
 import { useEffect, useState } from "react";
-import { FiCalendar, FiMapPin, FiSearch, FiUser } from "react-icons/fi";
+import { FiSearch, FiMapPin, FiSliders, FiX } from "react-icons/fi";
 import PropertyCard from "../components/property/PropertyCard";
 import api from "../api";
 
-const categories = ["Apartment", "House", "Villa", "Studio"];
+const PROPERTY_TYPES = [
+  { label: "All", value: "" },
+  { label: "Apartment", value: "apartment" },
+  { label: "House", value: "house" },
+  { label: "Villa", value: "villa" },
+  { label: "Studio", value: "studio" },
+  { label: "Condo", value: "condo" },
+];
 
 export default function Home() {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
   const [filters, setFilters] = useState({
     search: "",
-    guests: "",
-    category: "",
+    city: "",
+    property_type: "",
+    bedrooms: "",
+    price_min: "",
+    price_max: "",
   });
 
   useEffect(() => {
     fetchProperties();
   }, []);
 
-  async function fetchProperties(customParams = {}) {
+  async function fetchProperties(params = {}) {
     try {
       setLoading(true);
-
-      const response = await api.get("/properties/list/", {
-        params: customParams,
-      });
-
+      const response = await api.get("/properties/list/", { params });
       const data = response.data;
-
-      if (Array.isArray(data)) {
-        setProperties(data);
-      } else if (Array.isArray(data.results)) {
-        setProperties(data.results);
-      } else {
-        setProperties([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch properties:", error);
+      setProperties(Array.isArray(data) ? data : Array.isArray(data.results) ? data.results : []);
+    } catch {
       setProperties([]);
     } finally {
       setLoading(false);
@@ -45,119 +44,211 @@ export default function Home() {
   }
 
   function handleChange(e) {
-    setFilters((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
-  function handleCategory(category) {
-    const newCategory = filters.category === category ? "" : category;
-    const updated = { ...filters, category: newCategory };
+  function buildParams() {
+    const p = {};
+    if (filters.search) p.search = filters.search;
+    if (filters.city) p.city = filters.city;
+    if (filters.property_type) p.property_type = filters.property_type;
+    if (filters.bedrooms) p.bedrooms = filters.bedrooms;
+    if (filters.price_min) p.price_min = filters.price_min;
+    if (filters.price_max) p.price_max = filters.price_max;
+    return p;
+  }
+
+  function handleSearch(e) {
+    e.preventDefault();
+    fetchProperties(buildParams());
+  }
+
+  function handleTypeSelect(value) {
+    const updated = { ...filters, property_type: filters.property_type === value ? "" : value };
     setFilters(updated);
-
-    fetchProperties({
-      search: updated.search,
-      property_type: updated.category,
-    });
+    fetchProperties({ ...buildParams(), property_type: updated.property_type });
   }
 
-  function handleSearch() {
-    fetchProperties({
-      search: filters.search,
-      property_type: filters.category,
-    });
+  function clearFilters() {
+    const cleared = { search: "", city: "", property_type: "", bedrooms: "", price_min: "", price_max: "" };
+    setFilters(cleared);
+    fetchProperties();
   }
+
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-100">
+      {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 pt-16 pb-10">
         <div className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             Find your perfect place
           </h1>
           <p className="text-slate-500 text-lg">
-            Rent apartments, houses, and more with Renty
+            Rent apartments, houses, villas and more with Renty
           </p>
         </div>
 
-        <div className="max-w-5xl mx-auto bg-white rounded-full shadow-md border border-slate-200 p-2 flex flex-col md:flex-row items-stretch md:items-center overflow-hidden">
-          <div className="flex items-center gap-3 px-5 py-3 flex-1">
-            <FiMapPin className="text-slate-400 text-lg" />
-            <input
-              type="text"
-              name="search"
-              placeholder="Where are you going?"
-              value={filters.search}
-              onChange={handleChange}
-              className="w-full outline-none text-slate-700 placeholder:text-slate-400 bg-transparent"
-            />
-          </div>
+        {/* Search Bar */}
+        <form onSubmit={handleSearch} className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-full shadow-md border border-slate-200 p-2 flex items-center gap-2">
+            <div className="flex items-center gap-3 px-4 flex-1">
+              <FiMapPin className="text-slate-400 flex-shrink-0" />
+              <input
+                type="text"
+                name="search"
+                placeholder="Search by title, city, description..."
+                value={filters.search}
+                onChange={handleChange}
+                className="w-full outline-none text-slate-700 placeholder:text-slate-400 bg-transparent"
+              />
+            </div>
 
-          <div className="hidden md:block w-px h-8 bg-slate-200" />
+            <div className="hidden md:flex items-center gap-3 px-4 border-l border-slate-200">
+              <input
+                type="text"
+                name="city"
+                placeholder="City"
+                value={filters.city}
+                onChange={handleChange}
+                className="w-28 outline-none text-slate-700 placeholder:text-slate-400 bg-transparent text-sm"
+              />
+            </div>
 
-          <div className="flex items-center gap-3 px-5 py-3 flex-1">
-            <FiCalendar className="text-slate-400 text-lg" />
-            <input
-              type="text"
-              placeholder="Add dates"
-              className="w-full outline-none text-slate-700 placeholder:text-slate-400 bg-transparent"
-            />
-          </div>
-
-          <div className="hidden md:block w-px h-8 bg-slate-200" />
-
-          <div className="flex items-center gap-3 px-5 py-3 flex-1">
-            <FiUser className="text-slate-400 text-lg" />
-            <input
-              type="text"
-              name="guests"
-              placeholder="Add guests"
-              value={filters.guests}
-              onChange={handleChange}
-              className="w-full outline-none text-slate-700 placeholder:text-slate-400 bg-transparent"
-            />
-          </div>
-
-          <div className="mt-2 md:mt-0 md:ml-2">
             <button
-              onClick={handleSearch}
-              className="bg-blue-600 text-white px-6 py-3 rounded-full hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2 shadow-md w-full md:w-auto"
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full text-sm transition border ${
+                activeFilterCount > 0 && showFilters
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "border-slate-200 text-slate-600 hover:border-slate-300"
+              }`}
+            >
+              <FiSliders />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{activeFilterCount}</span>
+              )}
+            </button>
+
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-5 py-3 rounded-full hover:bg-blue-700 transition font-medium flex items-center gap-2 shadow-sm flex-shrink-0"
             >
               <FiSearch />
-              <span>Search</span>
+              <span className="hidden sm:inline">Search</span>
             </button>
           </div>
-        </div>
+        </form>
 
-        <div className="flex flex-wrap justify-center gap-3 mt-8">
-          {categories.map((category) => (
+        {/* Expandable Filters */}
+        {showFilters && (
+          <div className="max-w-4xl mx-auto mt-4 bg-white rounded-3xl border border-slate-200 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-medium text-slate-800">Advanced Filters</h3>
+              {activeFilterCount > 0 && (
+                <button onClick={clearFilters} className="text-sm text-red-500 hover:text-red-700 flex items-center gap-1">
+                  <FiX className="text-xs" />Clear all
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide block mb-1">Min Price (DZD)</label>
+                <input
+                  type="number"
+                  name="price_min"
+                  value={filters.price_min}
+                  onChange={handleChange}
+                  placeholder="0"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide block mb-1">Max Price (DZD)</label>
+                <input
+                  type="number"
+                  name="price_max"
+                  value={filters.price_max}
+                  onChange={handleChange}
+                  placeholder="Any"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide block mb-1">Bedrooms</label>
+                <select
+                  name="bedrooms"
+                  value={filters.bedrooms}
+                  onChange={handleChange}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Any</option>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <option key={n} value={n}>{n}+</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide block mb-1">City</label>
+                <input
+                  type="text"
+                  name="city"
+                  value={filters.city}
+                  onChange={handleChange}
+                  placeholder="Any city"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
             <button
-              key={category}
-              onClick={() => handleCategory(category)}
+              onClick={() => fetchProperties(buildParams())}
+              className="mt-4 bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition"
+            >
+              Apply Filters
+            </button>
+          </div>
+        )}
+
+        {/* Type Filters */}
+        <div className="flex flex-wrap justify-center gap-2 mt-6">
+          {PROPERTY_TYPES.map(({ label, value }) => (
+            <button
+              key={value}
+              onClick={() => handleTypeSelect(value)}
               className={`px-5 py-2 rounded-full text-sm transition border ${
-                filters.category === category
+                filters.property_type === value
                   ? "bg-blue-600 text-white border-blue-600"
                   : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:shadow-sm"
               }`}
             >
-              {category}
+              {label}
             </button>
           ))}
         </div>
       </section>
 
+      {/* Results */}
       <section className="max-w-7xl mx-auto px-6 pb-14">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-semibold text-slate-900">
-            Popular stays
+            {loading ? "Loading..." : `${properties.length} propert${properties.length !== 1 ? "ies" : "y"} found`}
           </h2>
         </div>
 
         {loading ? (
-          <p className="text-slate-500">Loading properties...</p>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-slate-100 rounded-3xl h-72 animate-pulse" />
+            ))}
+          </div>
         ) : properties.length === 0 ? (
-          <p className="text-slate-500">No properties found.</p>
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">🔍</div>
+            <p className="text-slate-500 text-lg">No properties found matching your filters.</p>
+            <button onClick={clearFilters} className="mt-4 text-blue-600 hover:underline">Clear filters</button>
+          </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {properties.map((property) => (
