@@ -11,7 +11,7 @@ export default function Navbar() {
   function handleLogout() {
     logout();
     setOpen(false);
-    navigate("/");
+    navigate("/login");
   }
 
   function closeMenu() {
