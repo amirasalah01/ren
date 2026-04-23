@@ -179,7 +179,7 @@ export default function PropertyDetail() {
               <h1 className="text-3xl font-bold text-slate-900 mb-2">{property.title}</h1>
               <div className="flex items-center gap-2 text-slate-500">
                 <FiMapPin />
-                <span>{[property.address, property.city, property.country].filter(Boolean).join(", ")}</span>
+                <span>{[property.address, property.gouvernement, property.city, property.country].filter(Boolean).join(", ") || "Location not specified"}</span>
               </div>
             </div>
             <button
@@ -240,7 +240,7 @@ export default function PropertyDetail() {
               <h2 className="text-xl font-semibold text-slate-900 mb-3">Location</h2>
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-500 text-sm">
                 <FiMapPin className="inline mr-1" />
-                {[property.address, property.city, property.country].filter(Boolean).join(", ") || "Location not specified"}
+                {[property.address, property.gouvernement, property.city, property.country].filter(Boolean).join(", ") || "Location not specified"}
               </div>
             </div>
           )}
