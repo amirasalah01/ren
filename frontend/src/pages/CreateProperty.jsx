@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiUpload, FiX, FiMapPin } from "react-icons/fi";
-import { createProperty } from "../api/properties";
+import { createProperty, uploadPropertyImage } from "../api/properties";
 import { safeSrc } from "../utils/sanitize";
 import { CITIES_BY_GOUVERNEMENT, TUNISIA_BOUNDS, TUNISIA_CENTER, TUNISIA_GOUVERNEMENTS } from "../utils/tunisia";
 
@@ -31,11 +31,16 @@ export default function CreateProperty() {
 
   const [mainImage, setMainImage] = useState(null);
   const [mainImagePreview, setMainImagePreview] = useState(null);
+  const [additionalImages, setAdditionalImages] = useState([]);
+  const [additionalPreviews, setAdditionalPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const markerRef = useRef(null);
+  // Refs to hold current preview URLs for cleanup on unmount (avoids stale closure)
+  const mainImagePreviewRef = useRef(null);
+  const additionalPreviewsRef = useRef([]);
 
   const availableCities = formData.gouvernement ? (CITIES_BY_GOUVERNEMENT[formData.gouvernement] || []) : [];
 
@@ -87,6 +92,19 @@ export default function CreateProperty() {
     };
   }, []);
 
+  // Keep refs in sync so the unmount cleanup always sees the latest URLs
+  useEffect(() => { mainImagePreviewRef.current = mainImagePreview; }, [mainImagePreview]);
+  useEffect(() => { additionalPreviewsRef.current = additionalPreviews; }, [additionalPreviews]);
+
+  // Revoke all remaining blob preview URLs when the component unmounts
+  useEffect(() => {
+    return () => {
+      const mp = mainImagePreviewRef.current;
+      if (mp && mp.startsWith("blob:")) URL.revokeObjectURL(mp);
+      additionalPreviewsRef.current.forEach((url) => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); });
+    };
+  }, []);
+
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
     if (name === "gouvernement") {
@@ -108,8 +126,28 @@ export default function CreateProperty() {
   }
 
   function removeImage() {
+    if (mainImagePreview && mainImagePreview.startsWith("blob:")) {
+      URL.revokeObjectURL(mainImagePreview);
+    }
     setMainImage(null);
     setMainImagePreview(null);
+  }
+
+  function handleAdditionalImagesChange(e) {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    const previews = files.map((f) => URL.createObjectURL(f));
+    setAdditionalImages((prev) => [...prev, ...files]);
+    setAdditionalPreviews((prev) => [...prev, ...previews]);
+    // Reset input so same files can be re-selected if needed
+    e.target.value = "";
+  }
+
+  function removeAdditionalImage(index) {
+    const url = additionalPreviews[index];
+    if (url && url.startsWith("blob:")) URL.revokeObjectURL(url);
+    setAdditionalImages((prev) => prev.filter((_, i) => i !== index));
+    setAdditionalPreviews((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e) {
@@ -133,6 +171,22 @@ export default function CreateProperty() {
       }
 
       const result = await createProperty(data);
+
+      // Upload additional images via PropertyImage model
+      if (additionalImages.length > 0) {
+        const results = await Promise.all(
+          additionalImages.map((file) => uploadPropertyImage(result.id, file).then(() => true).catch(() => false))
+        );
+        const failedCount = results.filter((ok) => !ok).length;
+        if (failedCount > 0) {
+          // Navigate to the property but warn about failed uploads
+          navigate(`/properties/${result.id}`, {
+            state: { warning: `${failedCount} photo(s) could not be uploaded. You can add them again from the edit page.` },
+          });
+          return;
+        }
+      }
+
       navigate(`/properties/${result.id}`);
     } catch (err) {
       console.error(err);
@@ -281,22 +335,51 @@ export default function CreateProperty() {
 
         {/* Photos */}
         <section className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold text-slate-800">Main Photo</h2>
+          <h2 className="text-lg font-semibold text-slate-800">Photos</h2>
 
-          {mainImagePreview ? (
-            <div className="relative">
-              <img src={safeSrc(mainImagePreview)} alt="Preview" className="w-full h-64 object-cover rounded-2xl" />
-              <button type="button" onClick={removeImage} className="absolute top-3 right-3 bg-white rounded-full p-2 shadow hover:bg-red-50 transition">
-                <FiX className="text-red-500" />
-              </button>
-            </div>
-          ) : (
-            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
-              <FiUpload className="text-slate-400 text-2xl mb-2" />
-              <span className="text-slate-500 text-sm">Click to upload main photo</span>
-              <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+          <div>
+            <p className="text-sm font-medium text-slate-700 mb-2">Main Photo</p>
+            {mainImagePreview ? (
+              <div className="relative">
+                <img src={safeSrc(mainImagePreview)} alt="Preview" className="w-full h-64 object-cover rounded-2xl" />
+                <button type="button" onClick={removeImage} className="absolute top-3 right-3 bg-white rounded-full p-2 shadow hover:bg-red-50 transition">
+                  <FiX className="text-red-500" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+                <FiUpload className="text-slate-400 text-2xl mb-2" />
+                <span className="text-slate-500 text-sm">Click to upload main photo</span>
+                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              </label>
+            )}
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-slate-700 mb-2">Additional Photos</p>
+            {additionalPreviews.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {additionalPreviews.map((src, idx) => (
+                  <div key={idx} className="relative rounded-xl overflow-hidden h-28">
+                    <img src={safeSrc(src)} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeAdditionalImage(idx)}
+                      className="absolute top-1 right-1 bg-white rounded-full p-1 shadow hover:bg-red-50 transition"
+                    >
+                      <FiX className="text-red-500 text-xs" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+              <FiUpload className="text-slate-400 text-xl mb-1" />
+              <span className="text-slate-500 text-sm">Click to add more photos</span>
+              <span className="text-slate-400 text-xs mt-0.5">You can select multiple images at once</span>
+              <input type="file" accept="image/*" multiple onChange={handleAdditionalImagesChange} className="hidden" />
             </label>
-          )}
+          </div>
         </section>
 
         {error && (
