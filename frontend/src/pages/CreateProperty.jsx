@@ -38,6 +38,9 @@ export default function CreateProperty() {
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const markerRef = useRef(null);
+  // Refs to hold current preview URLs for cleanup on unmount (avoids stale closure)
+  const mainImagePreviewRef = useRef(null);
+  const additionalPreviewsRef = useRef([]);
 
   const availableCities = formData.gouvernement ? (CITIES_BY_GOUVERNEMENT[formData.gouvernement] || []) : [];
 
@@ -89,13 +92,17 @@ export default function CreateProperty() {
     };
   }, []);
 
-  // Revoke all blob preview URLs when the component unmounts
+  // Keep refs in sync so the unmount cleanup always sees the latest URLs
+  useEffect(() => { mainImagePreviewRef.current = mainImagePreview; }, [mainImagePreview]);
+  useEffect(() => { additionalPreviewsRef.current = additionalPreviews; }, [additionalPreviews]);
+
+  // Revoke all remaining blob preview URLs when the component unmounts
   useEffect(() => {
     return () => {
-      if (mainImagePreview && mainImagePreview.startsWith("blob:")) URL.revokeObjectURL(mainImagePreview);
-      additionalPreviews.forEach((url) => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); });
+      const mp = mainImagePreviewRef.current;
+      if (mp && mp.startsWith("blob:")) URL.revokeObjectURL(mp);
+      additionalPreviewsRef.current.forEach((url) => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); });
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleChange(e) {
@@ -167,9 +174,17 @@ export default function CreateProperty() {
 
       // Upload additional images via PropertyImage model
       if (additionalImages.length > 0) {
-        await Promise.all(
-          additionalImages.map((file) => uploadPropertyImage(result.id, file).catch(() => null))
+        const results = await Promise.all(
+          additionalImages.map((file) => uploadPropertyImage(result.id, file).then(() => true).catch(() => false))
         );
+        const failedCount = results.filter((ok) => !ok).length;
+        if (failedCount > 0) {
+          // Navigate to the property but warn about failed uploads
+          navigate(`/properties/${result.id}`, {
+            state: { warning: `${failedCount} photo(s) could not be uploaded. You can add them again from the edit page.` },
+          });
+          return;
+        }
       }
 
       navigate(`/properties/${result.id}`);

@@ -25,6 +25,9 @@ export default function EditProperty() {
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const markerRef = useRef(null);
+  // Refs to hold current preview URLs for cleanup on unmount (avoids stale closure)
+  const mainImagePreviewRef = useRef(null);
+  const additionalPreviewsRef = useRef([]);
 
   useEffect(() => {
     async function load() {
@@ -118,13 +121,17 @@ export default function EditProperty() {
     };
   }, [formData === null ? null : "loaded"]);
 
-  // Revoke all blob preview URLs when the component unmounts
+  // Keep refs in sync so the unmount cleanup always sees the latest URLs
+  useEffect(() => { mainImagePreviewRef.current = mainImagePreview; }, [mainImagePreview]);
+  useEffect(() => { additionalPreviewsRef.current = additionalPreviews; }, [additionalPreviews]);
+
+  // Revoke all remaining blob preview URLs when the component unmounts
   useEffect(() => {
     return () => {
-      if (mainImagePreview && mainImagePreview.startsWith("blob:")) URL.revokeObjectURL(mainImagePreview);
-      additionalPreviews.forEach((url) => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); });
+      const mp = mainImagePreviewRef.current;
+      if (mp && mp.startsWith("blob:")) URL.revokeObjectURL(mp);
+      additionalPreviewsRef.current.forEach((url) => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); });
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleChange(e) {
@@ -202,12 +209,23 @@ export default function EditProperty() {
       if (imagesToDelete.length > 0) {
         await Promise.all(imagesToDelete.map((imgId) => deletePropertyImage(imgId).catch(() => null)));
       }
+
       // Upload new additional images
+      let uploadFailures = 0;
       if (additionalImages.length > 0) {
-        await Promise.all(additionalImages.map((file) => uploadPropertyImage(id, file).catch(() => null)));
+        const results = await Promise.all(
+          additionalImages.map((file) => uploadPropertyImage(id, file).then(() => true).catch(() => false))
+        );
+        uploadFailures = results.filter((ok) => !ok).length;
       }
 
-      navigate(`/properties/${id}`);
+      if (uploadFailures > 0) {
+        navigate(`/properties/${id}`, {
+          state: { warning: `${uploadFailures} photo(s) could not be uploaded. You can try adding them again.` },
+        });
+      } else {
+        navigate(`/properties/${id}`);
+      }
     } catch (err) {
       const errData = err.response?.data;
       if (errData && typeof errData === "object") {
