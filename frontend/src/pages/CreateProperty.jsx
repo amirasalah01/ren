@@ -89,6 +89,15 @@ export default function CreateProperty() {
     };
   }, []);
 
+  // Revoke all blob preview URLs when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (mainImagePreview && mainImagePreview.startsWith("blob:")) URL.revokeObjectURL(mainImagePreview);
+      additionalPreviews.forEach((url) => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
     if (name === "gouvernement") {
@@ -110,6 +119,9 @@ export default function CreateProperty() {
   }
 
   function removeImage() {
+    if (mainImagePreview && mainImagePreview.startsWith("blob:")) {
+      URL.revokeObjectURL(mainImagePreview);
+    }
     setMainImage(null);
     setMainImagePreview(null);
   }
@@ -125,6 +137,8 @@ export default function CreateProperty() {
   }
 
   function removeAdditionalImage(index) {
+    const url = additionalPreviews[index];
+    if (url && url.startsWith("blob:")) URL.revokeObjectURL(url);
     setAdditionalImages((prev) => prev.filter((_, i) => i !== index));
     setAdditionalPreviews((prev) => prev.filter((_, i) => i !== index));
   }
