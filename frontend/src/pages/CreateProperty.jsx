@@ -156,6 +156,10 @@ export default function CreateProperty() {
       setError("Please enter at least one price (per month or per day).");
       return;
     }
+    if (!formData.address || !formData.gouvernement || !formData.city) {
+      setError("Please fill in all location fields (address, gouvernement, and city).");
+      return;
+    }
     setLoading(true);
     setError("");
 
