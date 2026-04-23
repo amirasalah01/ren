@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { FiUpload, FiX, FiMapPin } from "react-icons/fi";
 import { getProperty, updateProperty } from "../api/properties";
 import { safeSrc } from "../utils/sanitize";
+import { CITIES_BY_GOUVERNEMENT, TUNISIA_BOUNDS, TUNISIA_CENTER, TUNISIA_GOUVERNEMENTS } from "../utils/tunisia";
 
 const PROPERTY_TYPES = ["apartment", "house", "condo", "villa", "studio"];
 
@@ -29,13 +30,15 @@ export default function EditProperty() {
           title: data.title || "",
           description: data.description || "",
           address: data.address || "",
+          gouvernement: data.gouvernement || "",
           city: data.city || "",
-          country: data.country || "",
+          country: data.country || "Tunisia",
           bedrooms: data.bedrooms || "",
           bathrooms: data.bathrooms || "",
           square_feet: data.square_feet || "",
           property_type: data.property_type || "apartment",
           price_per_month: data.price_per_month || "",
+          price_per_day: data.price_per_day || "",
           available_from: data.available_from || "",
           is_available: data.is_available ?? true,
           latitude: data.latitude || "",
@@ -53,7 +56,7 @@ export default function EditProperty() {
     load();
   }, [id]);
 
-  // Initialize map after form data loads
+  // Initialize map after form data loads — restricted to Tunisia
   useEffect(() => {
     if (!formData || !mapRef.current || leafletMapRef.current) return;
 
@@ -65,11 +68,15 @@ export default function EditProperty() {
         shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
       });
 
-      const lat = parseFloat(formData.latitude) || 20;
-      const lng = parseFloat(formData.longitude) || 0;
-      const zoom = formData.latitude ? 13 : 2;
+      const lat = parseFloat(formData.latitude) || TUNISIA_CENTER[0];
+      const lng = parseFloat(formData.longitude) || TUNISIA_CENTER[1];
+      const zoom = formData.latitude ? 13 : 6;
 
-      const map = L.map(mapRef.current).setView([lat, lng], zoom);
+      const map = L.map(mapRef.current, {
+        maxBounds: TUNISIA_BOUNDS,
+        maxBoundsViscosity: 1.0,
+      }).setView([lat, lng], zoom);
+
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
       }).addTo(map);
@@ -106,10 +113,14 @@ export default function EditProperty() {
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    if (name === "gouvernement") {
+      setFormData((prev) => ({ ...prev, gouvernement: value, city: "" }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+    }
   }
 
   function handleImageChange(e) {
@@ -127,6 +138,10 @@ export default function EditProperty() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!formData.price_per_month && !formData.price_per_day) {
+      setError("Please enter at least one price (per month or per day).");
+      return;
+    }
     setSaving(true);
     setError("");
 
@@ -159,6 +174,7 @@ export default function EditProperty() {
   }
 
   const inputCls = "w-full border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 bg-white";
+  const availableCities = formData?.gouvernement ? (CITIES_BY_GOUVERNEMENT[formData.gouvernement] || []) : [];
 
   if (loading) {
     return <div className="p-10 text-slate-500">Loading...</div>;
@@ -202,20 +218,32 @@ export default function EditProperty() {
             <label className="block text-sm font-medium text-slate-700 mb-1">Address *</label>
             <input name="address" value={formData.address} onChange={handleChange} className={inputCls} required />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">City *</label>
-              <input name="city" value={formData.city} onChange={handleChange} className={inputCls} required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Country *</label>
-              <input name="country" value={formData.country} onChange={handleChange} className={inputCls} required />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Gouvernement *</label>
+            <select name="gouvernement" value={formData.gouvernement} onChange={handleChange} className={inputCls} required>
+              <option value="">Select gouvernement...</option>
+              {TUNISIA_GOUVERNEMENTS.map((g) => (
+                <option key={g.name} value={g.name}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">City *</label>
+            <select name="city" value={formData.city} onChange={handleChange} className={inputCls} required disabled={!formData.gouvernement}>
+              <option value="">{formData.gouvernement ? "Select city..." : "Select gouvernement first"}</option>
+              {availableCities.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Country</label>
+            <input name="country" value={formData.country} readOnly className={`${inputCls} bg-slate-50 text-slate-500`} />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               <FiMapPin className="inline mr-1" />
-              Pin on Map (click to update location)
+              Pin on Map — Tunisia (click to update location)
             </label>
             <div ref={mapRef} className="w-full h-64 rounded-2xl overflow-hidden border border-slate-200" />
             {formData.latitude && formData.longitude && (
@@ -245,9 +273,16 @@ export default function EditProperty() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Price / month (DZD) *</label>
-              <input type="number" min="0" name="price_per_month" value={formData.price_per_month} onChange={handleChange} className={inputCls} required />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Price / month (TND)</label>
+              <input type="number" min="0" name="price_per_month" value={formData.price_per_month} onChange={handleChange} className={inputCls} placeholder="0" />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Price / day (TND)</label>
+              <input type="number" min="0" name="price_per_day" value={formData.price_per_day} onChange={handleChange} className={inputCls} placeholder="0" />
+            </div>
+          </div>
+          <p className="text-xs text-slate-400">Enter at least one price (per month or per day).</p>
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Available from</label>
               <input type="date" name="available_from" value={formData.available_from} onChange={handleChange} className={inputCls} />
@@ -304,3 +339,4 @@ export default function EditProperty() {
     </div>
   );
 }
+

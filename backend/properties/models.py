@@ -32,7 +32,11 @@ class Property(models.Model):
             ("studio", "Studio"),
         ],
     )
-    price_per_month = models.DecimalField(max_digits=10, decimal_places=2)
+    price_per_month = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    price_per_day = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+
+    # Tunisia gouvernement
+    gouvernement = models.CharField(max_length=100, blank=True, null=True)
 
     # Availability
     available_from = models.DateField(blank=True, null=True)

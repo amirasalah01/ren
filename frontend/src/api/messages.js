@@ -25,3 +25,8 @@ export async function deleteMessage(messageId) {
   const response = await api.delete(`/messages/${messageId}/`);
   return response.data;
 }
+
+export async function getConversation(userId) {
+  const response = await api.get(`/messages/conversation/${userId}/`);
+  return response.data;
+}
