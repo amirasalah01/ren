@@ -138,10 +138,15 @@ export default function CreateProperty() {
       console.error(err);
       const errData = err.response?.data;
       if (errData && typeof errData === "object") {
-        const msgs = Object.entries(errData)
-          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+        // Backend wraps validation errors as { error: true, status, message, data: { field: [...] } }
+        const innerData = errData.error === true && errData.data && typeof errData.data === "object"
+          ? errData.data
+          : errData;
+        const msgs = Object.entries(innerData)
+          .filter(([k]) => !["error", "status", "message", "data"].includes(k))
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : typeof v === "object" ? JSON.stringify(v) : v}`)
           .join(" | ");
-        setError(msgs);
+        setError(msgs || errData.message || "Failed to create property. Please check all fields.");
       } else {
         setError("Failed to create property. Please check all fields.");
       }
