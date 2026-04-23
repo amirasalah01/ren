@@ -116,7 +116,7 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ["property", "rating", "title", "comment"]
+        fields = ["rating", "title", "comment"]
 
     def create(self, validated_data):
         validated_data["reviewer"] = self.context["request"].user
