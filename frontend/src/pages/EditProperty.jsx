@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiUpload, FiX, FiMapPin } from "react-icons/fi";
-import { getProperty, updateProperty } from "../api/properties";
+import { getProperty, updateProperty, uploadPropertyImage, deletePropertyImage } from "../api/properties";
 import { safeSrc } from "../utils/sanitize";
 import { CITIES_BY_GOUVERNEMENT, TUNISIA_BOUNDS, TUNISIA_CENTER, TUNISIA_GOUVERNEMENTS } from "../utils/tunisia";
 
@@ -14,6 +14,10 @@ export default function EditProperty() {
   const [formData, setFormData] = useState(null);
   const [mainImage, setMainImage] = useState(null);
   const [mainImagePreview, setMainImagePreview] = useState(null);
+  const [existingImages, setExistingImages] = useState([]);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
+  const [additionalImages, setAdditionalImages] = useState([]);
+  const [additionalPreviews, setAdditionalPreviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -46,6 +50,9 @@ export default function EditProperty() {
         });
         if (data.main_image) {
           setMainImagePreview(data.main_image);
+        }
+        if (data.images && data.images.length > 0) {
+          setExistingImages(data.images);
         }
       } catch {
         setError("Failed to load property.");
@@ -136,6 +143,25 @@ export default function EditProperty() {
     setMainImagePreview(null);
   }
 
+  function markExistingImageForDeletion(imageId) {
+    setImagesToDelete((prev) => [...prev, imageId]);
+    setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+  }
+
+  function handleAdditionalImagesChange(e) {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    const previews = files.map((f) => URL.createObjectURL(f));
+    setAdditionalImages((prev) => [...prev, ...files]);
+    setAdditionalPreviews((prev) => [...prev, ...previews]);
+    e.target.value = "";
+  }
+
+  function removeAdditionalImage(index) {
+    setAdditionalImages((prev) => prev.filter((_, i) => i !== index));
+    setAdditionalPreviews((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!formData.price_per_month && !formData.price_per_day) {
@@ -157,6 +183,16 @@ export default function EditProperty() {
       }
 
       await updateProperty(id, data);
+
+      // Delete removed images
+      if (imagesToDelete.length > 0) {
+        await Promise.all(imagesToDelete.map((imgId) => deletePropertyImage(imgId).catch(() => null)));
+      }
+      // Upload new additional images
+      if (additionalImages.length > 0) {
+        await Promise.all(additionalImages.map((file) => uploadPropertyImage(id, file).catch(() => null)));
+      }
+
       navigate(`/properties/${id}`);
     } catch (err) {
       const errData = err.response?.data;
@@ -296,21 +332,67 @@ export default function EditProperty() {
 
         {/* Photo */}
         <section className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold text-slate-800">Main Photo</h2>
-          {mainImagePreview ? (
-            <div className="relative">
-              <img src={safeSrc(mainImagePreview)} alt="Preview" className="w-full h-64 object-cover rounded-2xl" />
-              <button type="button" onClick={removeImage} className="absolute top-3 right-3 bg-white rounded-full p-2 shadow hover:bg-red-50 transition">
-                <FiX className="text-red-500" />
-              </button>
-            </div>
-          ) : (
-            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
-              <FiUpload className="text-slate-400 text-2xl mb-2" />
-              <span className="text-slate-500 text-sm">Click to upload new photo</span>
-              <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+          <h2 className="text-lg font-semibold text-slate-800">Photos</h2>
+
+          <div>
+            <p className="text-sm font-medium text-slate-700 mb-2">Main Photo</p>
+            {mainImagePreview ? (
+              <div className="relative">
+                <img src={safeSrc(mainImagePreview)} alt="Preview" className="w-full h-64 object-cover rounded-2xl" />
+                <button type="button" onClick={removeImage} className="absolute top-3 right-3 bg-white rounded-full p-2 shadow hover:bg-red-50 transition">
+                  <FiX className="text-red-500" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+                <FiUpload className="text-slate-400 text-2xl mb-2" />
+                <span className="text-slate-500 text-sm">Click to upload new photo</span>
+                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              </label>
+            )}
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-slate-700 mb-2">Additional Photos</p>
+            {existingImages.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {existingImages.map((img) => (
+                  <div key={img.id} className="relative rounded-xl overflow-hidden h-28">
+                    <img src={safeSrc(img.image)} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => markExistingImageForDeletion(img.id)}
+                      className="absolute top-1 right-1 bg-white rounded-full p-1 shadow hover:bg-red-50 transition"
+                    >
+                      <FiX className="text-red-500 text-xs" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {additionalPreviews.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {additionalPreviews.map((src, idx) => (
+                  <div key={idx} className="relative rounded-xl overflow-hidden h-28">
+                    <img src={safeSrc(src)} alt={`New photo ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeAdditionalImage(idx)}
+                      className="absolute top-1 right-1 bg-white rounded-full p-1 shadow hover:bg-red-50 transition"
+                    >
+                      <FiX className="text-red-500 text-xs" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+              <FiUpload className="text-slate-400 text-xl mb-1" />
+              <span className="text-slate-500 text-sm">Click to add more photos</span>
+              <span className="text-slate-400 text-xs mt-0.5">You can select multiple images at once</span>
+              <input type="file" accept="image/*" multiple onChange={handleAdditionalImagesChange} className="hidden" />
             </label>
-          )}
+          </div>
         </section>
 
         {error && (
