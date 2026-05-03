@@ -5,7 +5,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from django.http import JsonResponse
 
 class RootView(APIView):
     """Root API endpoint"""
@@ -24,8 +24,13 @@ class RootView(APIView):
         )
 
 
+def health_check(request):
+    return JsonResponse({"status": "ok"}, status=200)
+
+
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/health/", health_check, name="health-check"),
     path("api/", include("users.urls")),
     path("api/properties/", include("properties.urls")),
     path("api/messages/", include("messaging.urls")),
