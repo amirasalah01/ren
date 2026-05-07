@@ -16,8 +16,6 @@ env:
   VITE_API_URL: http://rentify-alb-73041822.us-east-1.elb.amazonaws.com/api
   GUNICORN_SHUTDOWN_TIMEOUT: "15"
   BACKEND_DIR: /home/ubuntu/ren/backend
-  # ❌ REMOVED: secrets cannot be referenced at workflow-level env
-  # They are now declared inside each job that needs them
 
 jobs:
   backend-ci:
@@ -80,19 +78,20 @@ jobs:
       - backend-ci
       - frontend-ci
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    # ✅ FIX: secrets declared at job level so they are actually available
     env:
       BACKEND_HOST: ${{ secrets.EC2_HOST }}
       BASTION_HOST: ${{ secrets.BASTION_HOST }}
       BASTION_KNOWN_HOSTS: ${{ secrets.BASTION_KNOWN_HOSTS }}
     steps:
-      # ✅ NEW: validate secrets early so error is obvious
       - name: Validate secrets
         run: |
-          set -e
-          test -n "${{ secrets.SSH_PRIVATE_KEY }}" || (echo "❌ Missing SSH_PRIVATE_KEY" && exit 1)
-          test -n "${{ secrets.BASTION_HOST }}"    || (echo "❌ Missing BASTION_HOST"    && exit 1)
-          test -n "${{ secrets.EC2_HOST }}"        || (echo "❌ Missing EC2_HOST"        && exit 1)
+          set -euo pipefail
+          test -n "${BACKEND_HOST}"                    || (echo "❌ Missing EC2_HOST"        && exit 1)
+          test -n "${BASTION_HOST}"                    || (echo "❌ Missing BASTION_HOST"    && exit 1)
+          test -n "${{ secrets.SSH_PRIVATE_KEY }}"     || (echo "❌ Missing SSH_PRIVATE_KEY" && exit 1)
+          echo "✅ All secrets present"
+          echo "BASTION_HOST=${BASTION_HOST}"
+          echo "BACKEND_HOST=${BACKEND_HOST}"
 
       - name: Configure SSH key
         run: |
@@ -184,20 +183,20 @@ jobs:
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
-      # ✅ NEW: validate AWS secrets early
       - name: Validate AWS secrets
         run: |
           set -e
           test -n "${{ secrets.AWS_ACCESS_KEY_ID }}"     || (echo "❌ Missing AWS_ACCESS_KEY_ID"     && exit 1)
           test -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" || (echo "❌ Missing AWS_SECRET_ACCESS_KEY" && exit 1)
           test -n "${{ secrets.AWS_SESSION_TOKEN }}"     || (echo "❌ Missing AWS_SESSION_TOKEN"     && exit 1)
+          echo "✅ All AWS secrets present"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}  # ✅ NEW: required for Vocareum
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region:            ${{ env.AWS_REGION }}
 
       - name: Install frontend dependencies
