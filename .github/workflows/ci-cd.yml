@@ -12,6 +12,7 @@ env:
   S3_BUCKET: rentify-react-app
   BACKEND_HOST: ${{ secrets.EC2_HOST }}
   BASTION_HOST: ${{ secrets.BASTION_HOST }}
+  BASTION_KNOWN_HOSTS: ${{ secrets.BASTION_KNOWN_HOSTS }}
 
 jobs:
   backend-ci:
@@ -82,6 +83,16 @@ jobs:
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
+      - name: Configure known_hosts
+        run: |
+          touch ~/.ssh/known_hosts
+          if [ -n "${BASTION_KNOWN_HOSTS}" ]; then
+            printf '%s\n' "${BASTION_KNOWN_HOSTS}" >> ~/.ssh/known_hosts
+          else
+            ssh-keyscan -H "${BASTION_HOST}" >> ~/.ssh/known_hosts
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
       - name: Configure SSH bastion and target hosts
         run: |
           cat <<EOF > ~/.ssh/config
@@ -89,16 +100,14 @@ jobs:
             HostName ${BASTION_HOST}
             User ubuntu
             IdentityFile ~/.ssh/id_rsa
-            StrictHostKeyChecking no
-            UserKnownHostsFile /dev/null
+            StrictHostKeyChecking yes
 
           Host backend
             HostName ${BACKEND_HOST}
             User ubuntu
             IdentityFile ~/.ssh/id_rsa
             ProxyJump bastion
-            StrictHostKeyChecking no
-            UserKnownHostsFile /dev/null
+            StrictHostKeyChecking accept-new
           EOF
           chmod 600 ~/.ssh/config
 
@@ -114,8 +123,16 @@ jobs:
           /home/ubuntu/ren/backend/venv/bin/pip install -r requirements.txt
           /home/ubuntu/ren/backend/venv/bin/python manage.py migrate --noinput
 
-          sudo systemctl restart gunicorn || sudo systemctl restart rentify || true
-          sudo systemctl is-active gunicorn >/dev/null 2>&1 || sudo systemctl is-active rentify >/dev/null 2>&1 || /home/ubuntu/ren/backend/venv/bin/gunicorn --chdir /home/ubuntu/ren/backend rentify.wsgi:application --bind 0.0.0.0:8000 --daemon
+          if sudo systemctl list-unit-files | grep -q '^gunicorn\\.service'; then
+            sudo systemctl restart gunicorn
+          else
+            if pgrep -f '/home/ubuntu/ren/backend/venv/bin/gunicorn.*rentify.wsgi:application' >/dev/null; then
+              while read -r pid; do
+                kill "${pid}"
+              done < <(pgrep -f '/home/ubuntu/ren/backend/venv/bin/gunicorn.*rentify.wsgi:application')
+            fi
+            /home/ubuntu/ren/backend/venv/bin/gunicorn --chdir /home/ubuntu/ren/backend rentify.wsgi:application --bind 0.0.0.0:8000 --daemon
+          fi
           EOF
 
   deploy-frontend:
