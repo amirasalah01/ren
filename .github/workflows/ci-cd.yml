@@ -14,6 +14,7 @@ env:
   AWS_REGION: us-east-1
   S3_BUCKET: rentify-react-app
   VITE_API_URL: http://rentify-alb-73041822.us-east-1.elb.amazonaws.com/api
+  GUNICORN_SHUTDOWN_TIMEOUT: "15"
   BACKEND_DIR: /home/ubuntu/ren/backend
   BACKEND_HOST: ${{ secrets.EC2_HOST }}
   BASTION_HOST: ${{ secrets.BASTION_HOST }}
@@ -137,7 +138,7 @@ jobs:
               OLD_PID="$(cat "${PID_FILE}")"
               if [ -n "${OLD_PID}" ] && kill -0 "${OLD_PID}" 2>/dev/null; then
                 kill -TERM "${OLD_PID}"
-                for _ in $(seq 1 15); do
+                for _ in $(seq 1 "${GUNICORN_SHUTDOWN_TIMEOUT}"); do
                   if ! kill -0 "${OLD_PID}" 2>/dev/null; then
                     break
                   fi
@@ -153,6 +154,8 @@ jobs:
   deploy-frontend:
     name: Deploy Frontend to S3
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs:
       - backend-ci
       - frontend-ci
