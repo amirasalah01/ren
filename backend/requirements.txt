@@ -7,5 +7,7 @@ psycopg2-binary==2.9.10
 Pillow==11.0.0
 django-filter==23.5
 drf-spectacular==0.26.5
+django-storages==1.14.6
+boto3==1.43.6
 setuptools>=65.0
 importlib-metadata>=6.0
