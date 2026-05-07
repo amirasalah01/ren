@@ -7,6 +7,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   AWS_REGION: us-east-1
   S3_BUCKET: rentify-react-app
@@ -74,6 +77,7 @@ jobs:
   deploy-backend:
     name: Deploy Backend to EC2
     runs-on: ubuntu-latest
+    permissions: {}
     needs:
       - backend-ci
       - frontend-ci
@@ -128,14 +132,21 @@ jobs:
           if sudo systemctl list-unit-files | grep -q '^gunicorn\\.service'; then
             sudo systemctl restart gunicorn
           else
-            PIDS="$(pgrep -f "${BACKEND_DIR}/venv/bin/gunicorn.*rentify.wsgi:application" || true)"
-            if [ -n "${PIDS}" ]; then
-              while read -r pid; do
-                kill -TERM "${pid}"
-              done <<< "${PIDS}"
-              sleep 5
+            PID_FILE="${BACKEND_DIR}/gunicorn.pid"
+            if [ -f "${PID_FILE}" ]; then
+              OLD_PID="$(cat "${PID_FILE}")"
+              if [ -n "${OLD_PID}" ] && kill -0 "${OLD_PID}" 2>/dev/null; then
+                kill -TERM "${OLD_PID}"
+                for _ in $(seq 1 15); do
+                  if ! kill -0 "${OLD_PID}" 2>/dev/null; then
+                    break
+                  fi
+                  sleep 1
+                done
+                kill -0 "${OLD_PID}" 2>/dev/null && kill -KILL "${OLD_PID}" || true
+              fi
             fi
-            "${BACKEND_DIR}/venv/bin/gunicorn" --chdir "${BACKEND_DIR}" rentify.wsgi:application --bind 0.0.0.0:8000 --daemon
+            "${BACKEND_DIR}/venv/bin/gunicorn" --chdir "${BACKEND_DIR}" rentify.wsgi:application --bind 0.0.0.0:8000 --pid "${PID_FILE}" --daemon
           fi
           EOF
 
