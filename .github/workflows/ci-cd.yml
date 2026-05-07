@@ -120,7 +120,7 @@ jobs:
 
       - name: Deploy backend service
         run: |
-          ssh backend BACKEND_DIR="${BACKEND_DIR}" 'bash -s' << 'EOF'
+          ssh backend BACKEND_DIR="${BACKEND_DIR}" GUNICORN_SHUTDOWN_TIMEOUT="${GUNICORN_SHUTDOWN_TIMEOUT}" 'bash -s' << 'EOF'
           set -e
           cd /home/ubuntu/ren
           git fetch origin main
