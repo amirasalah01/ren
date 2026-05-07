@@ -11,6 +11,7 @@ env:
   AWS_REGION: us-east-1
   S3_BUCKET: rentify-react-app
   VITE_API_URL: http://rentify-alb-73041822.us-east-1.elb.amazonaws.com/api
+  BACKEND_DIR: /home/ubuntu/ren/backend
   BACKEND_HOST: ${{ secrets.EC2_HOST }}
   BASTION_HOST: ${{ secrets.BASTION_HOST }}
   BASTION_KNOWN_HOSTS: ${{ secrets.BASTION_KNOWN_HOSTS }}
@@ -39,7 +40,6 @@ jobs:
           # simplejwt imports pkg_resources, which is missing in newer setuptools releases
           pip install "setuptools<81"
           pip install -r requirements-dev.txt
-          pip install django-storages boto3
 
       - name: Run backend tests
         env:
@@ -115,9 +115,8 @@ jobs:
 
       - name: Deploy backend service
         run: |
-          ssh backend << 'EOF'
+          ssh backend BACKEND_DIR="${BACKEND_DIR}" 'bash -s' << 'EOF'
           set -e
-          BACKEND_DIR="/home/ubuntu/ren/backend"
           cd /home/ubuntu/ren
           git fetch origin main
           git reset --hard origin/main
@@ -129,10 +128,11 @@ jobs:
           if sudo systemctl list-unit-files | grep -q '^gunicorn\\.service'; then
             sudo systemctl restart gunicorn
           else
-            if pgrep -f "${BACKEND_DIR}/venv/bin/gunicorn.*rentify.wsgi:application" >/dev/null; then
+            PIDS="$(pgrep -f "${BACKEND_DIR}/venv/bin/gunicorn.*rentify.wsgi:application" || true)"
+            if [ -n "${PIDS}" ]; then
               while read -r pid; do
                 kill -TERM "${pid}"
-              done < <(pgrep -f "${BACKEND_DIR}/venv/bin/gunicorn.*rentify.wsgi:application")
+              done <<< "${PIDS}"
               sleep 5
             fi
             "${BACKEND_DIR}/venv/bin/gunicorn" --chdir "${BACKEND_DIR}" rentify.wsgi:application --bind 0.0.0.0:8000 --daemon
