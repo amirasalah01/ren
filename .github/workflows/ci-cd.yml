@@ -10,6 +10,7 @@ on:
 env:
   AWS_REGION: us-east-1
   S3_BUCKET: rentify-react-app
+  VITE_API_URL: http://rentify-alb-73041822.us-east-1.elb.amazonaws.com/api
   BACKEND_HOST: ${{ secrets.EC2_HOST }}
   BASTION_HOST: ${{ secrets.BASTION_HOST }}
   BASTION_KNOWN_HOSTS: ${{ secrets.BASTION_KNOWN_HOSTS }}
@@ -35,6 +36,7 @@ jobs:
       - name: Install backend dependencies
         run: |
           python -m pip install --upgrade pip
+          # simplejwt imports pkg_resources, which is missing in newer setuptools releases
           pip install "setuptools<81"
           pip install -r requirements-dev.txt
           pip install django-storages boto3
@@ -66,7 +68,7 @@ jobs:
 
       - name: Build frontend
         env:
-          VITE_API_URL: http://rentify-alb-73041822.us-east-1.elb.amazonaws.com/api
+          VITE_API_URL: ${{ env.VITE_API_URL }}
         run: npm run build
 
   deploy-backend:
@@ -115,23 +117,25 @@ jobs:
         run: |
           ssh backend << 'EOF'
           set -e
+          BACKEND_DIR="/home/ubuntu/ren/backend"
           cd /home/ubuntu/ren
           git fetch origin main
           git reset --hard origin/main
 
-          cd /home/ubuntu/ren/backend
-          /home/ubuntu/ren/backend/venv/bin/pip install -r requirements.txt
-          /home/ubuntu/ren/backend/venv/bin/python manage.py migrate --noinput
+          cd "${BACKEND_DIR}"
+          "${BACKEND_DIR}/venv/bin/pip" install -r requirements.txt
+          "${BACKEND_DIR}/venv/bin/python" manage.py migrate --noinput
 
           if sudo systemctl list-unit-files | grep -q '^gunicorn\\.service'; then
             sudo systemctl restart gunicorn
           else
-            if pgrep -f '/home/ubuntu/ren/backend/venv/bin/gunicorn.*rentify.wsgi:application' >/dev/null; then
+            if pgrep -f "${BACKEND_DIR}/venv/bin/gunicorn.*rentify.wsgi:application" >/dev/null; then
               while read -r pid; do
-                kill "${pid}"
-              done < <(pgrep -f '/home/ubuntu/ren/backend/venv/bin/gunicorn.*rentify.wsgi:application')
+                kill -TERM "${pid}"
+              done < <(pgrep -f "${BACKEND_DIR}/venv/bin/gunicorn.*rentify.wsgi:application")
+              sleep 5
             fi
-            /home/ubuntu/ren/backend/venv/bin/gunicorn --chdir /home/ubuntu/ren/backend rentify.wsgi:application --bind 0.0.0.0:8000 --daemon
+            "${BACKEND_DIR}/venv/bin/gunicorn" --chdir "${BACKEND_DIR}" rentify.wsgi:application --bind 0.0.0.0:8000 --daemon
           fi
           EOF
 
@@ -167,7 +171,7 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         env:
-          VITE_API_URL: http://rentify-alb-73041822.us-east-1.elb.amazonaws.com/api
+          VITE_API_URL: ${{ env.VITE_API_URL }}
         run: npm run build
 
       - name: Deploy to S3
