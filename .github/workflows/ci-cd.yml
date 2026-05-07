@@ -78,7 +78,6 @@ jobs:
   deploy-backend:
     name: Deploy Backend to EC2
     runs-on: ubuntu-latest
-    permissions: {}
     needs:
       - backend-ci
       - frontend-ci
@@ -144,7 +143,10 @@ jobs:
                   fi
                   sleep 1
                 done
-                kill -0 "${OLD_PID}" 2>/dev/null && kill -KILL "${OLD_PID}" || true
+                if kill -0 "${OLD_PID}" 2>/dev/null; then
+                  echo "Gunicorn PID ${OLD_PID} did not exit gracefully; sending SIGKILL"
+                  kill -KILL "${OLD_PID}" || true
+                fi
               fi
             fi
             "${BACKEND_DIR}/venv/bin/gunicorn" --chdir "${BACKEND_DIR}" rentify.wsgi:application --bind 0.0.0.0:8000 --pid "${PID_FILE}" --daemon
