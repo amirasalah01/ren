@@ -89,7 +89,11 @@ jobs:
           test -n "${BACKEND_HOST}"                    || (echo "❌ Missing EC2_HOST"        && exit 1)
           test -n "${BASTION_HOST}"                    || (echo "❌ Missing BASTION_HOST"    && exit 1)
           test -n "${{ secrets.SSH_PRIVATE_KEY }}"     || (echo "❌ Missing SSH_PRIVATE_KEY" && exit 1)
-          echo "✅ All secrets present"
+          # BASTION_KNOWN_HOSTS is optional — workflow will ssh-keyscan if absent
+          if [ -z "${BASTION_KNOWN_HOSTS}" ]; then
+            echo "ℹ️ BASTION_KNOWN_HOSTS not set; will use ssh-keyscan fallback"
+          fi
+          echo "✅ Required secrets present"
           echo "BASTION_HOST=${BASTION_HOST}"
           echo "BACKEND_HOST=${BACKEND_HOST}"
 
