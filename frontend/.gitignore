@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.env
+*.env
+.env.*
+frontend/.env*
+backend/.env*
+rentify_backup.sql
