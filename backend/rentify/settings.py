@@ -76,7 +76,7 @@ else:
             "HOST": config("DB_HOST", default="localhost"),
             "PORT": config("DB_PORT", default="5432"),
             "OPTIONS": {
-                "sslmode": "require",
+                "sslmode": config("DB_SSL_MODE", default="require"),
             },
         }
     }
@@ -99,25 +99,31 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Media files
 MEDIA_ROOT = BASE_DIR / "media"
 
-# S3 Storage for media files
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-AWS_STORAGE_BUCKET_NAME = 'rentify-media-storage'
-AWS_S3_REGION_NAME = 'us-east-1'
-AWS_DEFAULT_ACL = 'public-read'
-AWS_S3_FILE_OVERWRITE = False
-MEDIA_URL = 'https://rentify-media-storage.s3.amazonaws.com/'
+# S3 Storage for media files (disabled by default for local/Docker development)
+USE_S3 = config("USE_S3", default=False, cast=bool)
+if USE_S3:
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME", default="rentify-media-storage")
+    AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default="us-east-1")
+    AWS_DEFAULT_ACL = 'public-read'
+    AWS_S3_FILE_OVERWRITE = False
+    MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/'
+else:
+    MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173",
-    "http://rentify-alb-73041822.us-east-1.elb.amazonaws.com",
-    "http://rentify-react-app.s3-website-us-east-1.amazonaws.com",
-]
+_default_cors = (
+    "http://localhost,"
+    "http://localhost:3000,"
+    "http://localhost:5173,"
+    "http://127.0.0.1:3000,"
+    "http://127.0.0.1:5173,"
+    "http://rentify-alb-73041822.us-east-1.elb.amazonaws.com,"
+    "http://rentify-react-app.s3-website-us-east-1.amazonaws.com"
+)
+CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default=_default_cors, cast=Csv())
 
 CORS_ALLOW_CREDENTIALS = True
 
