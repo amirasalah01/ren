@@ -21,12 +21,15 @@ services:
     env_file: .env
     environment:
       DB_HOST: db
+      ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0,backend
+      USE_S3: "False"
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "8000:8000"
-
+    volumes:
+      - ./backend/media:/app/media
   frontend:
     build:
       context: ./frontend
@@ -37,6 +40,8 @@ services:
       - "80:80"
     depends_on:
       - backend
+    volumes:
+        - ./backend/media:/usr/share/nginx/html/media
 
 volumes:
   postgres_data:

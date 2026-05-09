@@ -30,19 +30,29 @@ export default function Home() {
     fetchProperties();
   }, []);
 
-  async function fetchProperties(params = {}) {
-    try {
-      setLoading(true);
-      const response = await api.get("/properties/list/", { params });
-      const data = response.data;
-      setProperties(Array.isArray(data) ? data : Array.isArray(data.results) ? data.results : []);
-    } catch {
-      setProperties([]);
-    } finally {
-      setLoading(false);
-    }
-  }
+async function fetchProperties(params = {}) {
+  try {
+    setLoading(true);
 
+    const response = await api.get("/properties/list/", { params });
+    const data = response.data;
+
+    console.log("PROPERTIES DATA:", data);
+
+    setProperties(
+      Array.isArray(data)
+        ? data
+        : Array.isArray(data.results)
+        ? data.results
+        : []
+    );
+  } catch (error) {
+    console.error("Failed to fetch properties:", error);
+    setProperties([]);
+  } finally {
+    setLoading(false);
+  }
+}
   function handleChange(e) {
     setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }

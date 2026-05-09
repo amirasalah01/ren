@@ -4,7 +4,11 @@ Django settings for rentify project.
 
 import os
 from pathlib import Path
+
 from decouple import Csv, config
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -19,7 +23,12 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "storages",
+# AWS S3 storage (optional)
+   *(
+    ["storages"]
+    if config("USE_S3", default=False, cast=bool)
+    else []
+    ),
     "properties",
     "django_filters",
     "rest_framework",
@@ -76,7 +85,7 @@ else:
             "HOST": config("DB_HOST", default="localhost"),
             "PORT": config("DB_PORT", default="5432"),
             "OPTIONS": {
-                "sslmode": config("DB_SSL_MODE", default="require"),
+                "sslmode": config("DB_SSL_MODE", default="disable"),
             },
         }
     }
@@ -97,6 +106,7 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Media files
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # S3 Storage for media files (disabled by default for local/Docker development)

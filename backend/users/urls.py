@@ -4,10 +4,10 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .views import DashboardView, LoginView, ProfileView, RegisterView, UserSearchView
 
 urlpatterns = [
-    path("auth/register/", RegisterView.as_view(), name="register"),
-    path("auth/login/", LoginView.as_view(), name="login"),
-    path("auth/profile/", ProfileView.as_view(), name="profile"),
-    path("auth/dashboard/", DashboardView.as_view(), name="dashboard"),
-    path("auth/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
-    path("auth/users/search/", UserSearchView.as_view(), name="user-search"),
+    path("register/", RegisterView.as_view(), name="register"),
+    path("login/", LoginView.as_view(), name="login"),
+    path("profile/", ProfileView.as_view(), name="profile"),
+    path("dashboard/", DashboardView.as_view(), name="dashboard"),
+    path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
+    path("users/search/", UserSearchView.as_view(), name="user-search"),
 ]

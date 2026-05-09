@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL || "/api";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api",
+  baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -9,9 +11,11 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("access_token");
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
@@ -26,15 +30,19 @@ let refreshPromise = null;
 
 api.interceptors.response.use(
   (response) => response,
+
   async (error) => {
     const originalRequest = error.config;
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
       const refreshToken = localStorage.getItem("refresh_token");
+
       if (refreshToken) {
         if (!refreshPromise) {
           refreshPromise = axios
-            .post(`${import.meta.env.VITE_API_URL}/auth/token/refresh/`, {
+            .post(`${API_URL}/auth/token/refresh/`, {
               refresh: refreshToken,
             })
             .then((res) => {
@@ -49,7 +57,9 @@ api.interceptors.response.use(
               refreshPromise = null;
             });
         }
+
         const newAccess = await refreshPromise;
+
         if (newAccess) {
           originalRequest.headers.Authorization = `Bearer ${newAccess}`;
           return api(originalRequest);
@@ -58,6 +68,7 @@ api.interceptors.response.use(
         clearAuthAndRedirect();
       }
     }
+
     return Promise.reject(error);
   }
 );
