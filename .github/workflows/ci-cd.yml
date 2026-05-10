@@ -9,10 +9,6 @@ on:
 permissions:
   contents: read
 
-env:
-  AWS_REGION: us-east-1
-  BACKEND_DIR: /home/ubuntu/ren
-
 jobs:
   # ─────────────────────────────────────────
   # 1. Backend CI
@@ -34,13 +30,13 @@ jobs:
           cache: "pip"
           cache-dependency-path: backend/requirements-dev.txt
 
-      - name: Install backend dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install "setuptools<81"
           pip install -r requirements-dev.txt
 
-      - name: Run backend tests
+      - name: Run tests
         env:
           GITHUB_ACTIONS: "true"
         run: pytest
@@ -65,33 +61,23 @@ jobs:
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Build frontend
+      - name: Build
         env:
           VITE_API_URL: http://rentify-alb-73041822.us-east-1.elb.amazonaws.com/api
         run: npm run build
 
   # ─────────────────────────────────────────
-  # 3. Deploy — Docker Compose sur EC2
+  # 3. Deploy Backend
   # ─────────────────────────────────────────
-  deploy:
-    name: Deploy to EC2 via Docker Compose
+  deploy-backend:
+    name: Deploy Backend
     runs-on: ubuntu-latest
-    needs:
-      - backend-ci
-      - frontend-ci
+    needs: backend-ci
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - name: Validate secrets
-        run: |
-          set -e
-          test -n "${{ secrets.SSH_PRIVATE_KEY }}" || (echo "❌ Missing SSH_PRIVATE_KEY" && exit 1)
-          test -n "${{ secrets.BASTION_HOST }}"    || (echo "❌ Missing BASTION_HOST"    && exit 1)
-          test -n "${{ secrets.EC2_HOST }}"        || (echo "❌ Missing EC2_HOST"        && exit 1)
-          echo "✅ All secrets present"
-
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
@@ -114,26 +100,79 @@ jobs:
           EOF
           chmod 600 ~/.ssh/config
 
-      - name: Deploy via Docker Compose
+      - name: Deploy Backend via Docker
         run: |
           ssh backend 'bash -s' << 'EOF'
           set -e
-          echo "📥 Git pull..."
           cd /home/ubuntu/ren
+          echo "📥 Git pull..."
           git fetch origin main
           git reset --hard origin/main
 
-          echo "🐳 Docker Compose rebuild..."
-          docker-compose down --remove-orphans
-          docker-compose up -d --build
+          echo "🐳 Rebuild backend container..."
+          docker-compose stop backend
+          docker-compose build backend
+          docker-compose up -d backend
 
-          echo "⏳ Waiting for backend..."
-          sleep 10
-
-          echo "✅ Status:"
-          docker-compose ps
+          echo "⏳ Waiting..."
+          sleep 8
 
           echo "🏥 Health check:"
-          curl -sf http://localhost:8000/api/health/ && echo "Backend OK ✅" || echo "Backend ❌"
-          curl -sf http://localhost:80 && echo "Frontend OK ✅" || echo "Frontend ❌"
+          curl -sf http://localhost:8000/api/health/ && echo "✅ Backend OK" || echo "❌ Backend FAILED"
+
+          docker-compose ps backend
+          EOF
+
+  # ─────────────────────────────────────────
+  # 4. Deploy Frontend
+  # ─────────────────────────────────────────
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: frontend-ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.BASTION_HOST }}" >> ~/.ssh/known_hosts
+          cat <<EOF > ~/.ssh/config
+          Host bastion
+            HostName ${{ secrets.BASTION_HOST }}
+            User ubuntu
+            IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking no
+
+          Host backend
+            HostName ${{ secrets.EC2_HOST }}
+            User ubuntu
+            IdentityFile ~/.ssh/id_rsa
+            ProxyJump bastion
+            StrictHostKeyChecking no
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Deploy Frontend via Docker
+        run: |
+          ssh backend 'bash -s' << 'EOF'
+          set -e
+          cd /home/ubuntu/ren
+          echo "📥 Git pull..."
+          git fetch origin main
+          git reset --hard origin/main
+
+          echo "🐳 Rebuild frontend container..."
+          docker-compose stop frontend
+          docker-compose build frontend
+          docker-compose up -d frontend
+
+          echo "⏳ Waiting..."
+          sleep 5
+
+          echo "🏥 Health check:"
+          curl -sf http://localhost:80 && echo "✅ Frontend OK" || echo "❌ Frontend FAILED"
+
+          docker-compose ps frontend
           EOF
